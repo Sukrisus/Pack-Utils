@@ -39,6 +39,9 @@ fun EditPackScreen(
     var majorVersion by remember { mutableStateOf("1") }
     var minorVersion by remember { mutableStateOf("0") }
     var patchVersion by remember { mutableStateOf("0") }
+    var minEngineMajor by remember { mutableStateOf("1") }
+    var minEngineMinor by remember { mutableStateOf("16") }
+    var minEnginePatch by remember { mutableStateOf("0") }
     
     LaunchedEffect(Unit) {
         viewModel.loadTexturePacks()
@@ -51,6 +54,10 @@ fun EditPackScreen(
             majorVersion = pack.version.getOrElse(0) { 1 }.toString()
             minorVersion = pack.version.getOrElse(1) { 0 }.toString()
             patchVersion = pack.version.getOrElse(2) { 0 }.toString()
+            // Default min_engine_version values
+            minEngineMajor = "1"
+            minEngineMinor = "16"
+            minEnginePatch = "0"
         }
     }
     
@@ -224,8 +231,8 @@ fun EditPackScreen(
                         label = { Text("Pack Name") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFBB86FC),
-                            focusedLabelColor = Color(0xFFBB86FC)
+                            focusedBorderColor = Color(0xFFFFB6C1),
+                            focusedLabelColor = Color(0xFFFFB6C1)
                         ),
                         singleLine = true
                     )
@@ -242,8 +249,8 @@ fun EditPackScreen(
                         label = { Text("Pack Description") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFBB86FC),
-                            focusedLabelColor = Color(0xFFBB86FC)
+                            focusedBorderColor = Color(0xFFFFB6C1),
+                            focusedLabelColor = Color(0xFFFFB6C1)
                         ),
                         maxLines = 3
                     )
@@ -270,8 +277,8 @@ fun EditPackScreen(
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFBB86FC),
-                                focusedLabelColor = Color(0xFFBB86FC)
+                                focusedBorderColor = Color(0xFFFFB6C1),
+                                focusedLabelColor = Color(0xFFFFB6C1)
                             )
                         )
                         OutlinedTextField(
@@ -281,8 +288,8 @@ fun EditPackScreen(
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFBB86FC),
-                                focusedLabelColor = Color(0xFFBB86FC)
+                                focusedBorderColor = Color(0xFFFFB6C1),
+                                focusedLabelColor = Color(0xFFFFB6C1)
                             )
                         )
                         OutlinedTextField(
@@ -292,8 +299,58 @@ fun EditPackScreen(
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFBB86FC),
-                                focusedLabelColor = Color(0xFFBB86FC)
+                                focusedBorderColor = Color(0xFFFFB6C1),
+                                focusedLabelColor = Color(0xFFFFB6C1)
+                            )
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Min Engine Version fields
+                    Text(
+                        text = "Minimum Engine Version",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = minEngineMajor,
+                            onValueChange = { if (it.all { char -> char.isDigit() }) minEngineMajor = it },
+                            label = { Text("Major") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFFFFB6C1),
+                                focusedLabelColor = Color(0xFFFFB6C1)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = minEngineMinor,
+                            onValueChange = { if (it.all { char -> char.isDigit() }) minEngineMinor = it },
+                            label = { Text("Minor") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFFFFB6C1),
+                                focusedLabelColor = Color(0xFFFFB6C1)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = minEnginePatch,
+                            onValueChange = { if (it.all { char -> char.isDigit() }) minEnginePatch = it },
+                            label = { Text("Patch") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFFFFB6C1),
+                                focusedLabelColor = Color(0xFFFFB6C1)
                             )
                         )
                     }
@@ -308,11 +365,16 @@ fun EditPackScreen(
                                 minorVersion.toIntOrNull() ?: 0,
                                 patchVersion.toIntOrNull() ?: 0
                             )
-                            viewModel.updateManifest(packId, packName, packDescription, version)
+                            val minEngineVersion = listOf(
+                                minEngineMajor.toIntOrNull() ?: 1,
+                                minEngineMinor.toIntOrNull() ?: 16,
+                                minEnginePatch.toIntOrNull() ?: 0
+                            )
+                            viewModel.updateManifest(packId, packName, packDescription, version, minEngineVersion)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFBB86FC),
+                            containerColor = Color(0xFFFFB6C1),
                             contentColor = Color.Black
                         ),
                         enabled = !isLoading && packName.isNotBlank()
@@ -331,7 +393,7 @@ fun EditPackScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Export Section
+            // Export & Share Section
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -342,30 +404,53 @@ fun EditPackScreen(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Export Pack",
+                        text = "Export & Share",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Export your texture pack as a .mcpack file",
+                        text = "Export and share your texture pack",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    Button(
-                        onClick = { exportLauncher.launch("${texturePack.name}.mcpack") },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
-                        ),
-                        enabled = !isLoading
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.FileDownload, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("EXPORT PACK")
+                        Button(
+                            onClick = { exportLauncher.launch("${texturePack.name}.mcpack") },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFB6C1),
+                                contentColor = Color.Black
+                            ),
+                            enabled = !isLoading
+                        ) {
+                            Icon(Icons.Default.FileDownload, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("EXPORT")
+                        }
+                        
+                        Button(
+                            onClick = { 
+                                // Share functionality - will be implemented
+                                viewModel.clearMessages()
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFF69B4),
+                                contentColor = Color.White
+                            ),
+                            enabled = !isLoading
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("SHARE")
+                        }
                     }
                 }
             }

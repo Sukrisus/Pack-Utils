@@ -15,6 +15,8 @@ import com.mcpe.texturepackmaker.ui.screens.HomeScreen
 import com.mcpe.texturepackmaker.ui.screens.CreatePackScreen
 import com.mcpe.texturepackmaker.ui.screens.EditPackScreen
 import com.mcpe.texturepackmaker.ui.screens.PackListScreen
+import com.mcpe.texturepackmaker.ui.screens.DashboardScreen
+import com.mcpe.texturepackmaker.ui.screens.SettingsScreen
 import com.mcpe.texturepackmaker.ui.theme.MCPETexturePackMakerTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
@@ -51,7 +53,9 @@ fun MCPETexturePackMakerApp() {
         composable("home") {
             HomeScreen(
                 onNavigateToCreate = { navController.navigate("create") },
-                onNavigateToPackList = { navController.navigate("pack_list") }
+                onNavigateToPackList = { navController.navigate("pack_list") },
+                onNavigateToDashboard = { navController.navigate("dashboard") },
+                onNavigateToSettings = { navController.navigate("settings") }
             )
         }
         
@@ -82,6 +86,26 @@ fun MCPETexturePackMakerApp() {
                 packId = packId,
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable("dashboard") {
+            DashboardScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSettings = { navController.navigate("settings") }
+            )
+        }
+        
+        composable("settings") {
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToHome = { 
+                    navController.popBackStack("home", false)
+                },
+                onNavigateToDashboard = { 
+                    navController.popBackStack("dashboard", false)
+                }
             )
         }
     }

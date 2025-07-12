@@ -40,7 +40,7 @@ class TexturePackRepository(private val context: Context) {
                     description = description
                 ),
                 modules = listOf(
-                    Module(description = "Resource Pack Module")
+                    Module()
                 )
             )
             
@@ -76,6 +76,53 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
+    suspend fun getTextures(packId: String, category: TextureCategory): List<TextureItem> = withContext(Dispatchers.IO) {
+        try {
+            val packDir = File(texturePacksDir, packId)
+            val categoryDir = File(packDir, category.mcpePath)
+            
+            if (!categoryDir.exists()) {
+                return@withContext emptyList()
+            }
+            
+            categoryDir.listFiles()?.filter { it.isFile && it.extension.lowercase() in listOf("png", "jpg", "jpeg") }
+                ?.map { file ->
+                    TextureItem(
+                        name = file.nameWithoutExtension,
+                        originalPath = file.absolutePath,
+                        mcpePath = "${category.mcpePath}${file.name}",
+                        category = category
+                    )
+                } ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    suspend fun replaceTexture(packId: String, texturePath: String, newTextureUri: Uri): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val packDir = File(texturePacksDir, packId)
+            val textureFile = File(packDir, texturePath)
+            
+            // Ensure the directory exists
+            textureFile.parentFile?.mkdirs()
+            
+            context.contentResolver.openInputStream(newTextureUri)?.use { inputStream ->
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                
+                FileOutputStream(textureFile).use { outputStream ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                }
+                
+                bitmap.recycle()
+            }
+            
+            Result.success(textureFile.absolutePath)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
     suspend fun updatePackIcon(packId: String, iconUri: Uri): Result<String> = withContext(Dispatchers.IO) {
         try {
             val packDir = File(texturePacksDir, packId)
@@ -99,7 +146,7 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
-    suspend fun updateManifest(packId: String, name: String, description: String, version: List<Int>): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun updateManifest(packId: String, name: String, description: String, version: List<Int>, minEngineVersion: List<Int> = listOf(1, 16, 0)): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val packDir = File(texturePacksDir, packId)
             val manifestFile = File(packDir, "manifest.json")
@@ -110,7 +157,8 @@ class TexturePackRepository(private val context: Context) {
                     header = currentManifest.header.copy(
                         name = name,
                         description = description,
-                        version = version
+                        version = version,
+                        minEngineVersion = minEngineVersion
                     )
                 )
                 

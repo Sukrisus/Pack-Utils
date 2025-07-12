@@ -103,9 +103,9 @@ fun PackListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(
-                        color = Color(0xFFBB86FC)
-                    )
+                                    CircularProgressIndicator(
+                    color = Color(0xFFFFB6C1)
+                )
                 }
             } else if (texturePacks.isEmpty()) {
                 Box(
@@ -211,7 +211,7 @@ fun TexturePackCard(
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = "Edit",
-                            tint = Color(0xFFBB86FC)
+                            tint = Color(0xFFFFB6C1)
                         )
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {

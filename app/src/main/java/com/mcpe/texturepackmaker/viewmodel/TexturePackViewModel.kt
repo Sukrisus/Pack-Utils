@@ -7,6 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mcpe.texturepackmaker.data.TexturePack
+import com.mcpe.texturepackmaker.data.TextureItem
+import com.mcpe.texturepackmaker.data.TextureCategory
 import com.mcpe.texturepackmaker.repository.TexturePackRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +31,9 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
     private val _successMessage = mutableStateOf<String?>(null)
     val successMessage: State<String?> = _successMessage
     
+    private val _textures = MutableStateFlow<List<TextureItem>>(emptyList())
+    val textures: StateFlow<List<TextureItem>> = _textures.asStateFlow()
+    
     init {
         loadTexturePacks()
     }
@@ -44,6 +49,42 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+    
+    fun loadTextures(packId: String, category: TextureCategory) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val textures = repository.getTextures(packId, category)
+                _textures.value = textures
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to load textures: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    fun replaceTexture(packId: String, texturePath: String, newTextureUri: Uri) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            repository.replaceTexture(packId, texturePath, newTextureUri)
+                .onSuccess { 
+                    _successMessage.value = "Texture replaced successfully!"
+                    // Reload textures for the current category
+                    val currentTextures = _textures.value
+                    if (currentTextures.isNotEmpty()) {
+                        loadTextures(packId, currentTextures.first().category)
+                    }
+                }
+                .onFailure { 
+                    _errorMessage.value = "Failed to replace texture: ${it.message}"
+                }
+            
+            _isLoading.value = false
         }
     }
     
@@ -89,7 +130,7 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
     
-    fun updateManifest(packId: String, name: String, description: String, version: List<Int>) {
+    fun updateManifest(packId: String, name: String, description: String, version: List<Int>, minEngineVersion: List<Int> = listOf(1, 16, 0)) {
         if (name.isBlank()) {
             _errorMessage.value = "Pack name cannot be empty"
             return
@@ -99,7 +140,7 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             _isLoading.value = true
             _errorMessage.value = null
             
-            repository.updateManifest(packId, name, description, version)
+            repository.updateManifest(packId, name, description, version, minEngineVersion)
                 .onSuccess { 
                     _successMessage.value = "Pack details updated successfully!"
                     loadTexturePacks()
