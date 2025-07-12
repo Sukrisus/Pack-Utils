@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mcpe.texturepackmaker.ui.components.BottomNavigationBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +49,8 @@ fun SettingsScreen(
             BottomNavigationBar(
                 onNavigateToHome = onNavigateToHome,
                 onNavigateToDashboard = onNavigateToDashboard,
-                onNavigateToSettings = {}
+                onNavigateToSettings = {},
+                currentRoute = "settings"
             )
         }
     ) { paddingValues ->

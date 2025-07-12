@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.mcpe.texturepackmaker.data.TextureCategory
 import com.mcpe.texturepackmaker.data.TextureItem
 import com.mcpe.texturepackmaker.viewmodel.TexturePackViewModel
+import com.mcpe.texturepackmaker.ui.components.BottomNavigationBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +68,8 @@ fun DashboardScreen(
             BottomNavigationBar(
                 onNavigateToHome = onNavigateBack,
                 onNavigateToDashboard = {},
-                onNavigateToSettings = onNavigateToSettings
+                onNavigateToSettings = onNavigateToSettings,
+                currentRoute = "dashboard"
             )
         }
     ) { paddingValues ->
@@ -436,32 +438,3 @@ fun TextureItem(
     }
 }
 
-@Composable
-fun BottomNavigationBar(
-    onNavigateToHome: () -> Unit,
-    onNavigateToDashboard: () -> Unit,
-    onNavigateToSettings: () -> Unit
-) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-            label = { Text("Home") },
-            selected = false,
-            onClick = onNavigateToHome
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-            label = { Text("Dashboard") },
-            selected = true,
-            onClick = onNavigateToDashboard
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-            label = { Text("Settings") },
-            selected = false,
-            onClick = onNavigateToSettings
-        )
-    }
-}

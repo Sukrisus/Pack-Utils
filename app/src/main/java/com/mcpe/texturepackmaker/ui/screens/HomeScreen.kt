@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mcpe.texturepackmaker.ui.components.BottomNavigationBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +42,8 @@ fun HomeScreen(
             BottomNavigationBar(
                 onNavigateToHome = {},
                 onNavigateToDashboard = onNavigateToDashboard,
-                onNavigateToSettings = onNavigateToSettings
+                onNavigateToSettings = onNavigateToSettings,
+                currentRoute = "home"
             )
         }
     ) { paddingValues ->
