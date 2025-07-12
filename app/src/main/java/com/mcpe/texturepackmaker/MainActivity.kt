@@ -17,6 +17,7 @@ import com.mcpe.texturepackmaker.ui.screens.EditPackScreen
 import com.mcpe.texturepackmaker.ui.screens.PackListScreen
 import com.mcpe.texturepackmaker.ui.theme.MCPETexturePackMakerTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
 import com.mcpe.texturepackmaker.viewmodel.TexturePackViewModel
 
 class MainActivity : ComponentActivity() {
@@ -38,7 +39,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MCPETexturePackMakerApp() {
     val navController = rememberNavController()
-    val viewModel: TexturePackViewModel = viewModel()
+    val context = LocalContext.current
+    val viewModel: TexturePackViewModel = viewModel { 
+        TexturePackViewModel(context.applicationContext as android.app.Application)
+    }
     
     NavHost(
         navController = navController,

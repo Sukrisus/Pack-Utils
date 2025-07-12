@@ -40,6 +40,10 @@ fun EditPackScreen(
     var minorVersion by remember { mutableStateOf("0") }
     var patchVersion by remember { mutableStateOf("0") }
     
+    LaunchedEffect(Unit) {
+        viewModel.loadTexturePacks()
+    }
+    
     LaunchedEffect(texturePack) {
         texturePack?.let { pack ->
             packName = pack.name
