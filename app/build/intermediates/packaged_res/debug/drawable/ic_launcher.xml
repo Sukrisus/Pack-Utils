@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background -->
+    <path
+        android:fillColor="#BB86FC"
+        android:pathData="M4,4L44,4L44,44L4,44L4,4z" />
+    <!-- Texture pack icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8,8L40,8L40,40L8,40L8,8z"
+        android:strokeWidth="1"
+        android:strokeColor="#BB86FC" />
+    <!-- Grid pattern -->
+    <path
+        android:fillColor="#BB86FC"
+        android:pathData="M16,8L16,40M24,8L24,40M32,8L32,40M8,16L40,16M8,24L40,24M8,32L40,32"
+        android:strokeWidth="1"
+        android:strokeColor="#BB86FC" />
+</vector>
