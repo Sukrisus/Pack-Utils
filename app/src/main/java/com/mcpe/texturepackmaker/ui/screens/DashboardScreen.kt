@@ -346,7 +346,7 @@ fun CategoryItem(
         ) {
             Icon(
                 imageVector = when (category) {
-                    TextureCategory.BLOCKS -> Icons.Default.Cube
+                    TextureCategory.BLOCKS -> Icons.Default.ViewInAr
                     TextureCategory.ITEMS -> Icons.Default.Inventory
                     TextureCategory.ENTITY -> Icons.Default.Person
                     TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
