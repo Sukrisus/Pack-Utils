@@ -22,8 +22,8 @@ data class Manifest(
 )
 
 data class Header(
-    val description: String,
     val name: String,
+    val description: String,
     val uuid: String = UUID.randomUUID().toString(),
     val version: List<Int> = listOf(1, 0, 0),
     @SerializedName("min_engine_version")
@@ -31,7 +31,6 @@ data class Header(
 )
 
 data class Module(
-    val description: String,
     val type: String = "resources",
     val uuid: String = UUID.randomUUID().toString(),
     val version: List<Int> = listOf(1, 0, 0)

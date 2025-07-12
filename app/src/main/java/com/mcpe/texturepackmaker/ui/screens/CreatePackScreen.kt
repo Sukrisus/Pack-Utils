@@ -77,8 +77,8 @@ fun CreatePackScreen(
                 placeholder = { Text("Enter pack name") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFBB86FC),
-                    focusedLabelColor = Color(0xFFBB86FC)
+                    focusedBorderColor = Color(0xFFFFB6C1),
+                    focusedLabelColor = Color(0xFFFFB6C1)
                 ),
                 singleLine = true
             )
@@ -96,8 +96,8 @@ fun CreatePackScreen(
                 placeholder = { Text("Enter pack description") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFBB86FC),
-                    focusedLabelColor = Color(0xFFBB86FC)
+                    focusedBorderColor = Color(0xFFFFB6C1),
+                    focusedLabelColor = Color(0xFFFFB6C1)
                 ),
                 maxLines = 3
             )
@@ -118,7 +118,7 @@ fun CreatePackScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFBB86FC),
+                    containerColor = Color(0xFFFFB6C1),
                     contentColor = Color.Black
                 ),
                 shape = RoundedCornerShape(28.dp),

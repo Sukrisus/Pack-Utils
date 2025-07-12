@@ -18,7 +18,9 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun HomeScreen(
     onNavigateToCreate: () -> Unit,
-    onNavigateToPackList: () -> Unit
+    onNavigateToPackList: () -> Unit,
+    onNavigateToDashboard: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -36,7 +38,11 @@ fun HomeScreen(
             )
         },
         bottomBar = {
-            BottomNavigationBar()
+            BottomNavigationBar(
+                onNavigateToHome = {},
+                onNavigateToDashboard = onNavigateToDashboard,
+                onNavigateToSettings = onNavigateToSettings
+            )
         }
     ) { paddingValues ->
         Column(
@@ -97,7 +103,7 @@ fun ActionButton(
             .fillMaxWidth(0.8f)
             .height(56.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFBB86FC),
+            containerColor = Color(0xFFFFB6C1), // Light pink color
             contentColor = Color.Black
         ),
         shape = RoundedCornerShape(28.dp),
@@ -123,7 +129,11 @@ fun ActionButton(
 }
 
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigationBar(
+    onNavigateToHome: () -> Unit,
+    onNavigateToDashboard: () -> Unit,
+    onNavigateToSettings: () -> Unit
+) {
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface
     ) {
@@ -131,19 +141,19 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
             label = { Text("Home") },
             selected = true,
-            onClick = { }
+            onClick = onNavigateToHome
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
             label = { Text("Dashboard") },
             selected = false,
-            onClick = { }
+            onClick = onNavigateToDashboard
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
             label = { Text("Settings") },
             selected = false,
-            onClick = { }
+            onClick = onNavigateToSettings
         )
     }
 }
