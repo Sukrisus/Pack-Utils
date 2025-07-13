@@ -70,13 +70,13 @@ fun TextureDropdown(
             ) {
                 Icon(
                     imageVector = when (category) {
-                        TextureCategory.BLOCKS -> Icons.Default.ViewInAr
-                        TextureCategory.ITEMS -> Icons.Default.Inventory
-                        TextureCategory.ENTITY -> Icons.Default.Person
+                        TextureCategory.ENTITIES -> Icons.Default.Person
                         TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
+                        TextureCategory.ITEMS -> Icons.Default.Inventory
+                        TextureCategory.MAP -> Icons.Default.Map
+                        TextureCategory.UI -> Icons.Default.TouchApp
                         TextureCategory.GUI -> Icons.Default.Dashboard
-                        TextureCategory.PARTICLE -> Icons.Default.Star
-                        TextureCategory.MISC -> Icons.Default.MoreVert
+                        TextureCategory.COLORMAP -> Icons.Default.Palette
                     },
                     contentDescription = null,
                     tint = Color(0xFFFFB6C1),
@@ -218,8 +218,8 @@ fun TextureGridItem(
         ) {
             AsyncImage(
                 model = if (texture.originalPath.startsWith("asset://")) {
-                    // Handle asset paths
-                    texture.originalPath.removePrefix("asset://")
+                    // Handle asset paths - remove the asset:// prefix for Coil
+                    "file:///android_asset/${texture.originalPath.removePrefix("asset://")}"
                 } else {
                     texture.originalPath
                 },

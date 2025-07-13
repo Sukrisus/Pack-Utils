@@ -76,6 +76,25 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
     
+    fun loadAllTextures(packId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val allTextures = mutableListOf<TextureItem>()
+                TextureCategory.values().forEach { category ->
+                    val categoryTextures = repository.getTextures(packId, category)
+                    allTextures.addAll(categoryTextures)
+                }
+                _textures.value = allTextures
+                _currentPackId.value = packId
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to load textures: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
     fun replaceTexture(packId: String, texturePath: String, newTextureUri: Uri) {
         viewModelScope.launch {
             _isLoading.value = true

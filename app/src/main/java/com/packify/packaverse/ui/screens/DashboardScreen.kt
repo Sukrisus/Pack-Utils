@@ -7,11 +7,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -284,29 +288,72 @@ fun TextureEditorContent(
     onExportPack: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Pack Selection
-        item {
-            PackSelectionCard(
-                texturePacks = texturePacks,
-                onPackSelected = onPackSelected,
-                onExportPack = onExportPack
-            )
+    var selectedCategory by remember { mutableStateOf<TextureCategory?>(null) }
+    
+    // Load all textures when the first pack is available
+    LaunchedEffect(texturePacks) {
+        if (texturePacks.isNotEmpty() && textures.isEmpty()) {
+            viewModel.loadAllTextures(texturePacks.first().id)
         }
-        
-        // Texture Categories
-        items(TextureCategory.values()) { category ->
-            TextureDropdown(
-                category = category,
-                textures = textures.filter { it.category == category },
-                viewModel = viewModel,
-                packId = texturePacks.firstOrNull()?.id ?: "",
-                onTextureSelected = onTextureSelected
-            )
+    }
+    
+    if (selectedCategory == null) {
+        // Main Dashboard View - Categories Grid
+        LazyColumn(
+            modifier = modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Pack Selection Section
+            item {
+                PackSelectionCard(
+                    texturePacks = texturePacks,
+                    onPackSelected = onPackSelected,
+                    onExportPack = onExportPack
+                )
+            }
+            
+            // Title
+            item {
+                Text(
+                    text = "ADDONS MAKER FOR MINECRAFT",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            
+            // Categories Grid
+            items(TextureCategory.values().chunked(2)) { categoryRow ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    categoryRow.forEach { category ->
+                        CategoryCard(
+                            category = category,
+                            textureCount = textures.count { it.category == category },
+                            onClick = { selectedCategory = category },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Fill remaining space if odd number of items
+                    if (categoryRow.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
         }
+    } else {
+        // Category Library View - Show textures for selected category
+        CategoryLibraryScreen(
+            category = selectedCategory!!,
+            textures = textures.filter { it.category == selectedCategory },
+            viewModel = viewModel,
+            packId = texturePacks.firstOrNull()?.id ?: "",
+            onTextureSelected = onTextureSelected,
+            onBackPressed = { selectedCategory = null }
+        )
     }
 }
 
@@ -421,5 +468,185 @@ fun PackSelectionCard(
     }
 }
 
+@Composable
+fun CategoryCard(
+    category: TextureCategory,
+    textureCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(120.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = when (category) {
+                    TextureCategory.ENTITIES -> Icons.Default.Person
+                    TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
+                    TextureCategory.ITEMS -> Icons.Default.Inventory
+                    TextureCategory.MAP -> Icons.Default.Map
+                    TextureCategory.UI -> Icons.Default.TouchApp
+                    TextureCategory.GUI -> Icons.Default.Dashboard
+                    TextureCategory.COLORMAP -> Icons.Default.Palette
+                },
+                contentDescription = null,
+                tint = Color(0xFFFFB6C1),
+                modifier = Modifier.size(32.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = category.displayName,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Text(
+                text = "$textureCount textures",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
 
-
+@Composable
+fun CategoryLibraryScreen(
+    category: TextureCategory,
+    textures: List<TextureItem>,
+    viewModel: TexturePackViewModel,
+    packId: String,
+    onTextureSelected: (TextureItem) -> Unit,
+    onBackPressed: () -> Unit
+) {
+    val context = LocalContext.current
+    
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { 
+            viewModel.addTexture(packId, category, uri)
+        }
+    }
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Back Button and Title
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackPressed) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            
+            Text(
+                text = category.displayName,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            
+            Text(
+                text = "${textures.size} textures",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Search Bar (placeholder)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            shape = RoundedCornerShape(25.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Search",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Texture Grid
+        if (textures.isNotEmpty()) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                gridItems(textures) { texture ->
+                    TextureGridItem(
+                        texture = texture,
+                        onClick = { onTextureSelected(texture) }
+                    )
+                }
+            }
+        } else {
+            // Empty State
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Default.PhotoLibrary,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No textures found",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Import textures to get started",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
+    }
+}

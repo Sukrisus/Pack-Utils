@@ -45,11 +45,11 @@ data class TextureItem(
 )
 
 enum class TextureCategory(val displayName: String, val mcpePath: String, val assetPath: String) {
-    BLOCKS("Blocks", "textures/blocks/", "blocks"),
-    ITEMS("Items", "textures/items/", "items"),
-    ENTITY("Entity", "textures/entity/", "entity"),
+    ENTITIES("Entities", "textures/entity/", "entity"),
     ENVIRONMENT("Environment", "textures/environment/", "environment"),
+    ITEMS("Items", "textures/items/", "items"),
+    MAP("Map", "textures/map/", "map"),
+    UI("UI", "textures/ui/", "ui"),
     GUI("GUI", "textures/gui/", "gui"),
-    PARTICLE("Particle", "textures/particle/", "particle"),
-    MISC("Misc", "textures/misc/", "misc")
+    COLORMAP("Colormap", "textures/colormap/", "colormap")
 }
