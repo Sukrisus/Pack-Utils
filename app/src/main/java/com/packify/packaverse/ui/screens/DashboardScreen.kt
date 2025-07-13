@@ -28,7 +28,7 @@ import com.packify.packaverse.ui.components.TextureDropdown
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.background
+import androidx.compose.foundation.background
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +42,7 @@ fun DashboardScreen(
         TextureCategory.ENTITY,
         TextureCategory.ENVIRONMENT,
         TextureCategory.ITEMS,
-        TextureCategory.UI,
+        TextureCategory.BLOCKS,
         TextureCategory.GUI,
         TextureCategory.PARTICLE,
         TextureCategory.MISC

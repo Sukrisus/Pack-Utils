@@ -95,8 +95,8 @@ fun PackifyApp() {
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToSettings = { navController.navigate("settings") },
-                onNavigateToTextureEditor = { packId, textureName ->
-                    navController.navigate("texture_editor/$packId/$textureName")
+                onNavigateToCategory = { category ->
+                    // Handle category navigation if needed
                 }
             )
         }
