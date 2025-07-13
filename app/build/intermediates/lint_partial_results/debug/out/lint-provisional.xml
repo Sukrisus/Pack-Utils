@@ -70,4 +70,28 @@
         </map>
     </incident>
 
+    <incident
+        id="NewApi"
+        severity="error"
+        message="">
+        <fix-data minSdk="ffffffffff800000" requiresApi="ffffffffe0000000"/>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/MainActivity.kt"
+            line="90"
+            column="44"
+            startOffset="3317"
+            endLine="90"
+            endColumn="68"
+            endOffset="3341"/>
+        <map>
+            <api-levels id="minSdk"
+                value="ffffffffff800000"/>
+            <api-levels id="requiresApi"
+                value="ffffffffe0000000"/>
+            <entry
+                name="message"
+                string="Call requires API level 30 (current min is %1$s): `android.os.Environment#isExternalStorageManager`"/>
+        </map>
+    </incident>
+
 </incidents>

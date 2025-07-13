@@ -1,13 +1,27 @@
 package com.packify.packaverse
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -20,7 +34,6 @@ import com.packify.packaverse.ui.screens.SettingsScreen
 import com.packify.packaverse.ui.screens.TextureEditorScreen
 import com.packify.packaverse.ui.theme.PackifyTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.ui.platform.LocalContext
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 
 class MainActivity : ComponentActivity() {
@@ -45,6 +58,69 @@ fun PackifyApp() {
     val context = LocalContext.current
     val viewModel: TexturePackViewModel = viewModel { 
         TexturePackViewModel(context.applicationContext as android.app.Application)
+    }
+    
+    var hasStoragePermission by remember { mutableStateOf(false) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    
+    // Check if we have storage permission
+    LaunchedEffect(Unit) {
+        hasStoragePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                Environment.isExternalStorageManager()
+            } catch (e: Exception) {
+                false
+            }
+        } else {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+        
+        if (!hasStoragePermission) {
+            showPermissionDialog = true
+        }
+    }
+    
+    // Permission launcher for Android 11+ (MANAGE_EXTERNAL_STORAGE)
+    val manageStorageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        hasStoragePermission = Environment.isExternalStorageManager()
+        showPermissionDialog = !hasStoragePermission
+    }
+    
+    // Permission launcher for Android 10 and below
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasStoragePermission = permissions.values.all { it }
+        showPermissionDialog = !hasStoragePermission
+    }
+    
+    if (showPermissionDialog) {
+        PermissionDialog(
+            onGrantPermission = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    manageStorageLauncher.launch(intent)
+                } else {
+                    permissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        )
+                    )
+                }
+            },
+            onDismiss = {
+                // Allow the app to continue without permission for now
+                showPermissionDialog = false
+            }
+        )
     }
     
     NavHost(
@@ -128,4 +204,43 @@ fun PackifyApp() {
             }
         }
     }
+}
+
+@Composable
+fun PermissionDialog(
+    onGrantPermission: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Storage Permission Required",
+                fontSize = 18.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+        },
+        text = {
+            Text(
+                text = "This app needs storage permission to save your texture pack projects locally so they won't be deleted when you uninstall the app. Your projects will be saved in the 'packify/projects' folder.",
+                textAlign = TextAlign.Justify,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onGrantPermission,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Grant Permission")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Skip for now")
+            }
+        }
+    )
 }

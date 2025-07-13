@@ -362,4 +362,28 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             _isLoading.value = false
         }
     }
+    
+    fun hasStoragePermission(): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            try {
+                android.os.Environment.isExternalStorageManager()
+            } catch (e: Exception) {
+                false
+            }
+        } else {
+            getApplication<android.app.Application>().checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+    }
+    
+    fun getProjectsDirectoryPath(): String {
+        return if (hasStoragePermission()) {
+            android.os.Environment.getExternalStorageDirectory().absolutePath + "/packify/projects"
+        } else {
+            getApplication<android.app.Application>().filesDir.absolutePath + "/texture_packs"
+        }
+    }
+    
+    fun isUsingExternalStorage(): Boolean {
+        return hasStoragePermission()
+    }
 }
