@@ -177,9 +177,9 @@ document.getElementById(id).style.display = 'none';
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
-      <span class="mdl-layout-title">Lint Report: 1 error and 61 warnings</span>
+      <span class="mdl-layout-title">Lint Report: 61 warnings</span>
       <div class="mdl-layout-spacer"></div>
-      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Sun Jul 13 21:35:29 UTC 2025 by AGP (8.2.0)</nav>
+      <nav class="mdl-navigation mdl-layout--large-screen-only">Check performed at Sun Jul 13 21:37:22 UTC 2025 by AGP (8.2.0)</nav>
     </div>
   </header>
   <div class="mdl-layout__drawer">
@@ -187,7 +187,6 @@ document.getElementById(id).style.display = 'none';
     <nav class="mdl-navigation">
       <a class="mdl-navigation__link" href="#overview"><i class="material-icons">dashboard</i>Overview</a>
       <a class="mdl-navigation__link" href="#ObsoleteLintCustomCheck"><i class="material-icons warning-icon">warning</i>Obsolete custom lint check (1)</a>
-      <a class="mdl-navigation__link" href="#NewApi"><i class="material-icons error-icon">error</i>Calling new methods on older versions (1)</a>
       <a class="mdl-navigation__link" href="#RedundantLabel"><i class="material-icons warning-icon">warning</i>Redundant label on activity (1)</a>
       <a class="mdl-navigation__link" href="#GradleDependency"><i class="material-icons warning-icon">warning</i>Obsolete Gradle Dependency (9)</a>
       <a class="mdl-navigation__link" href="#UnusedResources"><i class="material-icons warning-icon">warning</i>Unused resources (34)</a>
@@ -215,9 +214,6 @@ document.getElementById(id).style.display = 'none';
 <a href="#ObsoleteLintCustomCheck">ObsoleteLintCustomCheck</a>: Obsolete custom lint check</td></tr>
 <tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Correctness">Correctness</a>
 </td></tr>
-<tr>
-<td class="countColumn">1</td><td class="issueColumn"><i class="material-icons error-icon">error</i>
-<a href="#NewApi">NewApi</a>: Calling new methods on older versions</td></tr>
 <tr>
 <td class="countColumn">1</td><td class="issueColumn"><i class="material-icons warning-icon">warning</i>
 <a href="#RedundantLabel">RedundantLabel</a>: Redundant label on activity</td></tr>
@@ -326,61 +322,7 @@ Dismiss</button>            </div>
             </div>
           </section>
 <a name="Correctness"></a>
-<a name="NewApi"></a>
-<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="NewApiCard" style="display: block;">
-            <div class="mdl-card mdl-cell mdl-cell--12-col">
-  <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">Calling new methods on older versions</h2>
-  </div>
-              <div class="mdl-card__supporting-text">
-<div class="issue">
-<div class="warningslist">
-<span class="location"><a href="../../src/main/java/com/packify/packaverse/MainActivity.kt">../../src/main/java/com/packify/packaverse/MainActivity.kt</a>:90</span>: <span class="message">Call requires API level 30 (current min is 24): <code>android.os.Environment#isExternalStorageManager</code></span><br /><pre class="errorlines">
-<span class="lineno">  87 </span>    <span class="keyword">val</span> manageStorageLauncher = rememberLauncherForActivityResult(
-<span class="lineno">  88 </span>        contract = ActivityResultContracts.StartActivityForResult()
-<span class="lineno">  89 </span>    ) { result ->
-<span class="caretline"><span class="lineno">  90 </span>        hasStoragePermission = Environment.<span class="error">isExternalStorageManager</span>()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno">  91 </span>        showPermissionDialog = !hasStoragePermission
-<span class="lineno">  92 </span>    }
-<span class="lineno">  93 </span>    
-</pre>
-
-</div>
-<div class="metadata"><div class="explanation" id="explanationNewApi" style="display: none;">
-This check scans through all the Android API calls in the application and warns about any calls that are not available on <b>all</b> versions targeted by this application (according to its minimum SDK attribute in the manifest).<br/>
-<br/>
-If you really want to use this API and don't need to support older devices just set the <code>minSdkVersion</code> in your <code>build.gradle</code> or <code>AndroidManifest.xml</code> files.<br/>
-<br/>
-If your code is <b>deliberately</b> accessing newer APIs, and you have ensured (e.g. with conditional execution) that this code will only ever be called on a supported platform, then you can annotate your class or method with the <code>@TargetApi</code> annotation specifying the local minimum SDK to apply, such as <code>@TargetApi(11)</code>, such that this check considers 11 rather than your manifest file's minimum SDK as the required API level.<br/>
-<br/>
-If you are deliberately setting <code>android:</code> attributes in style definitions, make sure you place this in a <code>values-v</code><i>NN</i> folder in order to avoid running into runtime conflicts on certain devices where manufacturers have added custom attributes whose ids conflict with the new ones on later platforms.<br/>
-<br/>
-Similarly, you can use tools:targetApi="11" in an XML file to indicate that the element will only be inflated in an adequate context.<br/>Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.<br>
-To suppress this error, use the issue id "NewApi" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
-<br/></div>
-</div>
-</div>
-<div class="chips">
-<span class="mdl-chip">
-    <span class="mdl-chip__text">NewApi</span>
-</span>
-<span class="mdl-chip">
-    <span class="mdl-chip__text">Correctness</span>
-</span>
-<span class="mdl-chip">
-    <span class="mdl-chip__text">Error</span>
-</span>
-<span class="mdl-chip">
-    <span class="mdl-chip__text">Priority 6/10</span>
-</span>
-</div>
-              </div>
-              <div class="mdl-card__actions mdl-card--border">
-<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationNewApiLink" onclick="reveal('explanationNewApi');">
-Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="NewApiCardLink" onclick="hideid('NewApiCard');">
-Dismiss</button>            </div>
-            </div>
-          </section><a name="RedundantLabel"></a>
+<a name="RedundantLabel"></a>
 <section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="RedundantLabelCard" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
   <div class="mdl-card__title">

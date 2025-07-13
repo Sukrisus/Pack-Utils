@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import android.annotation.TargetApi
 
 class TexturePackViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -365,13 +366,18 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
     
     fun hasStoragePermission(): Boolean {
         return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            try {
-                android.os.Environment.isExternalStorageManager()
-            } catch (e: Exception) {
-                false
-            }
+            getApi30StoragePermission()
         } else {
             getApplication<android.app.Application>().checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    @TargetApi(30)
+    private fun getApi30StoragePermission(): Boolean {
+        return try {
+            android.os.Environment.isExternalStorageManager()
+        } catch (e: Exception) {
+            false
         }
     }
     

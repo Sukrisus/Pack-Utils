@@ -35,6 +35,8 @@ import com.packify.packaverse.ui.screens.TextureEditorScreen
 import com.packify.packaverse.ui.theme.PackifyTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.packify.packaverse.viewmodel.TexturePackViewModel
+import android.annotation.TargetApi
+import android.annotation.SuppressLint
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +54,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("NewApi")
 @Composable
 fun PackifyApp() {
     val navController = rememberNavController()
@@ -66,11 +69,7 @@ fun PackifyApp() {
     // Check if we have storage permission
     LaunchedEffect(Unit) {
         hasStoragePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            try {
-                Environment.isExternalStorageManager()
-            } catch (e: Exception) {
-                false
-            }
+            hasApi30ExternalStorageManager()
         } else {
             ContextCompat.checkSelfPermission(
                 context,
@@ -243,4 +242,13 @@ fun PermissionDialog(
             }
         }
     )
+}
+
+@TargetApi(30)
+fun hasApi30ExternalStorageManager(): Boolean {
+    return try {
+        Environment.isExternalStorageManager()
+    } catch (e: Exception) {
+        false
+    }
 }

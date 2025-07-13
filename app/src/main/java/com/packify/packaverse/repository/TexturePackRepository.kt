@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import java.io.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import android.annotation.TargetApi
 
 class TexturePackRepository(private val context: Context) {
     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
@@ -34,13 +35,18 @@ class TexturePackRepository(private val context: Context) {
     
     private fun hasStoragePermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            try {
-                Environment.isExternalStorageManager()
-            } catch (e: Exception) {
-                false
-            }
+            getApi30StoragePermission()
         } else {
             context.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    @TargetApi(30)
+    private fun getApi30StoragePermission(): Boolean {
+        return try {
+            Environment.isExternalStorageManager()
+        } catch (e: Exception) {
+            false
         }
     }
     

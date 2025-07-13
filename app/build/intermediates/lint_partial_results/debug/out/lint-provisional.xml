@@ -71,26 +71,77 @@
     </incident>
 
     <incident
-        id="NewApi"
-        severity="error"
-        message="">
-        <fix-data minSdk="ffffffffff800000" requiresApi="ffffffffe0000000"/>
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 30">
+        <fix-replace
+            description="Delete @TargetApi"
+            replacement="">
+            <range
+                file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/MainActivity.kt"
+                startOffset="8888"
+                endOffset="8902"/>
+        </fix-replace>
         <location
             file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/MainActivity.kt"
-            line="90"
-            column="44"
-            startOffset="3317"
-            endLine="90"
-            endColumn="68"
-            endOffset="3341"/>
+            line="247"
+            column="1"
+            startOffset="8888"
+            endLine="247"
+            endColumn="15"
+            endOffset="8902"/>
         <map>
-            <api-levels id="minSdk"
-                value="ffffffffff800000"/>
-            <api-levels id="requiresApi"
-                value="ffffffffe0000000"/>
-            <entry
-                name="message"
-                string="Call requires API level 30 (current min is %1$s): `android.os.Environment#isExternalStorageManager`"/>
+            <condition minGE="ffffffffe0000000"/>
+        </map>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 30">
+        <fix-replace
+            description="Delete @TargetApi"
+            replacement="">
+            <range
+                file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/repository/TexturePackRepository.kt"
+                startOffset="1555"
+                endOffset="1569"/>
+        </fix-replace>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/repository/TexturePackRepository.kt"
+            line="44"
+            column="5"
+            startOffset="1555"
+            endLine="44"
+            endColumn="19"
+            endOffset="1569"/>
+        <map>
+            <condition minGE="ffffffffe0000000"/>
+        </map>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 30">
+        <fix-replace
+            description="Delete @TargetApi"
+            replacement="">
+            <range
+                file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/viewmodel/TexturePackViewModel.kt"
+                startOffset="13497"
+                endOffset="13511"/>
+        </fix-replace>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/viewmodel/TexturePackViewModel.kt"
+            line="375"
+            column="5"
+            startOffset="13497"
+            endLine="375"
+            endColumn="19"
+            endOffset="13511"/>
+        <map>
+            <condition minGE="ffffffffe0000000"/>
         </map>
     </incident>
 
