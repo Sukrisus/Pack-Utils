@@ -42,5 +42,6 @@ string success
 string update_pack
 string version
 style Theme.MCPETexturePackMaker
+style Theme.Packify
 xml backup_rules
 xml data_extraction_rules

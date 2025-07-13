@@ -10,7 +10,7 @@
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="white">#FFFFFFFF</color>
-    <string name="app_name">MCPE Texture Pack Maker</string>
+    <string name="app_name">Packify</string>
     <string name="back">Back</string>
     <string name="cancel">Cancel</string>
     <string name="create_pack">Create Pack</string>
@@ -36,7 +36,7 @@
     <string name="success">Success</string>
     <string name="update_pack">Update Pack</string>
     <string name="version">Version</string>
-    <style name="Theme.MCPETexturePackMaker" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.Packify" parent="android:Theme.Material.Light.NoActionBar">
         
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryDark">@color/purple_700</item>

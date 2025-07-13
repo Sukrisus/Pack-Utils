@@ -364,7 +364,7 @@ fun AdvancedToolButton(
         EditorTool.ERASER -> Icons.Default.Clear to "Eraser"
         EditorTool.COLOR_PICKER -> Icons.Default.ColorLens to "Color Picker"
         EditorTool.FILL -> Icons.Default.FormatPaint to "Fill Tool"
-        EditorTool.SPRAY_PAINT -> Icons.Default.Spray to "Spray Paint"
+        EditorTool.SPRAY_PAINT -> Icons.Default.Grain to "Spray Paint"
         EditorTool.PENCIL -> Icons.Default.Edit to "Pencil"
     }
     
@@ -450,7 +450,7 @@ fun EnhancedTextureCanvas(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .weight(1f)
+            .fillMaxHeight(0.7f)
             .padding(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -480,32 +480,17 @@ fun EnhancedTextureCanvas(
                                 lastPoint?.let { last ->
                                     when (currentTool) {
                                         EditorTool.BRUSH, EditorTool.PENCIL -> {
-                                            path.quadraticBezierTo(
-                                                last.x, last.y,
-                                                (last.x + newPoint.x) / 2,
-                                                (last.y + newPoint.y) / 2
-                                            )
+                                            path.lineTo(newPoint.x, newPoint.y)
                                         }
                                         EditorTool.ERASER -> {
-                                            path.quadraticBezierTo(
-                                                last.x, last.y,
-                                                (last.x + newPoint.x) / 2,
-                                                (last.y + newPoint.y) / 2
-                                            )
+                                            path.lineTo(newPoint.x, newPoint.y)
                                         }
                                         EditorTool.SPRAY_PAINT -> {
                                             // For spray paint, create multiple small dots
                                             repeat(5) {
                                                 val randomX = newPoint.x + (Math.random() - 0.5).toFloat() * brushSize
                                                 val randomY = newPoint.y + (Math.random() - 0.5).toFloat() * brushSize
-                                                path.addOval(
-                                                    androidx.compose.ui.geometry.Rect(
-                                                        randomX - 2f,
-                                                        randomY - 2f,
-                                                        randomX + 2f,
-                                                        randomY + 2f
-                                                    )
-                                                )
+                                                path.addCircle(randomX, randomY, 2f, Path.Direction.CW)
                                             }
                                         }
                                         else -> {}

@@ -1,4 +1,4 @@
-com.mcpe.texturepackmaker
+com.packify.packaverse
 anim abc_fade_in
 anim abc_fade_out
 anim abc_grow_fade_in_from_bottom
@@ -747,6 +747,7 @@ id center_vertical
 id checkbox
 id checked
 id chronometer
+id coil_request_manager
 id collapseActionView
 id compose_view_saveable_id_tag
 id consume_window_insets_tag
@@ -1328,6 +1329,7 @@ style Theme_AppCompat_Light_DialogWhenLarge
 style Theme_AppCompat_Light_NoActionBar
 style Theme_AppCompat_NoActionBar
 style Theme_MCPETexturePackMaker
+style Theme_Packify
 style ThemeOverlay_AppCompat
 style ThemeOverlay_AppCompat_ActionBar
 style ThemeOverlay_AppCompat_Dark
