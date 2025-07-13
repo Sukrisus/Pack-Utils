@@ -1,5 +1,6 @@
 package com.packify.packaverse.ui.screens
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -36,6 +37,15 @@ import androidx.compose.ui.unit.sp
 import com.packify.packaverse.data.TextureItem
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
+import androidx.core.content.FileProvider
+import android.graphics.BitmapFactory
+import android.widget.Toast
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL
@@ -55,15 +65,35 @@ fun TextureEditorScreen(
     var showColorPicker by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
+    var textureBitmap by remember { mutableStateOf<Bitmap?>(null) }
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    
+    // Initialize texture bitmap
+    LaunchedEffect(texture) {
+        try {
+            val inputStream = context.assets.open("base/${texture.category.assetPath}/${texture.name}.png")
+            textureBitmap = BitmapFactory.decodeStream(inputStream)
+        } catch (e: Exception) {
+            // If texture not found in assets, create a default bitmap
+            textureBitmap = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888)
+        }
+    }
     
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { 
-            // TODO: Import texture from device
+            scope.launch {
+                try {
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                    textureBitmap = BitmapFactory.decodeStream(inputStream)
+                    hasUnsavedChanges = true
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Failed to import texture", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
     
@@ -91,6 +121,13 @@ fun TextureEditorScreen(
                 actions = {
                     IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
                         Icon(Icons.Default.Upload, contentDescription = "Import")
+                    }
+                    IconButton(onClick = { 
+                        scope.launch {
+                            shareTexture(context, textureBitmap, texture.name)
+                        }
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share")
                     }
                     IconButton(onClick = { showSaveDialog = true }) {
                         Icon(Icons.Default.Save, contentDescription = "Save")
@@ -121,10 +158,15 @@ fun TextureEditorScreen(
             // Canvas
             TextureCanvas(
                 texture = texture,
+                textureBitmap = textureBitmap,
                 currentTool = currentTool,
                 brushSize = brushSize,
                 selectedColor = selectedColor,
-                onDrawingChanged = { hasUnsavedChanges = true }
+                onDrawingChanged = { hasUnsavedChanges = true },
+                onBitmapChanged = { newBitmap ->
+                    textureBitmap = newBitmap
+                    hasUnsavedChanges = true
+                }
             )
             
             // Color Palette
@@ -143,10 +185,12 @@ fun TextureEditorScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            // TODO: Save texture
-                            hasUnsavedChanges = false
-                            showSaveDialog = false
-                            onNavigateBack()
+                            scope.launch {
+                                saveTexture(context, textureBitmap, packId, texture)
+                                hasUnsavedChanges = false
+                                showSaveDialog = false
+                                onNavigateBack()
+                            }
                         }
                     ) {
                         Text("Save")
@@ -305,13 +349,16 @@ fun ToolButton(
 @Composable
 fun TextureCanvas(
     texture: TextureItem,
+    textureBitmap: Bitmap?,
     currentTool: EditorTool,
     brushSize: Float,
     selectedColor: Color,
-    onDrawingChanged: () -> Unit
+    onDrawingChanged: () -> Unit,
+    onBitmapChanged: (Bitmap) -> Unit
 ) {
     var path by remember { mutableStateOf(Path()) }
     var lastPoint by remember { mutableStateOf<Offset?>(null) }
+    val density = LocalDensity.current
     
     Card(
         modifier = Modifier
@@ -352,17 +399,45 @@ fun TextureCanvas(
                             },
                             onDragEnd = {
                                 lastPoint = null
+                                // Apply the drawing to the bitmap
+                                textureBitmap?.let { bitmap ->
+                                    val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+                                    val canvas = Canvas(mutableBitmap)
+                                    val paint = Paint().apply {
+                                        color = selectedColor.toArgb()
+                                        strokeWidth = brushSize
+                                        style = Paint.Style.STROKE
+                                        strokeCap = Paint.Cap.ROUND
+                                        strokeJoin = Paint.Join.ROUND
+                                        isAntiAlias = true
+                                    }
+                                    
+                                    if (currentTool == EditorTool.ERASER) {
+                                        paint.color = android.graphics.Color.TRANSPARENT
+                                        paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                                    }
+                                    
+                                    canvas.drawPath(path, paint)
+                                    onBitmapChanged(mutableBitmap)
+                                }
                             }
                         )
                     }
             ) {
-                // Draw the texture background
-                drawRect(
-                    color = Color.LightGray,
-                    size = size
-                )
+                // Draw checkerboard background
+                drawCheckerboardBackground(size)
                 
-                // Draw the path
+                // Draw the texture bitmap
+                textureBitmap?.let { bitmap ->
+                    val imageBitmap = bitmap.asImageBitmap()
+                    drawImage(
+                        image = imageBitmap,
+                        dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                        filterQuality = FilterQuality.None // Keep pixelated look
+                    )
+                }
+                
+                // Draw the current path
                 if (currentTool == EditorTool.BRUSH) {
                     drawPath(
                         path = androidx.compose.ui.graphics.Path().apply {
@@ -376,7 +451,7 @@ fun TextureCanvas(
                         path = androidx.compose.ui.graphics.Path().apply {
                             addPath(path.asComposePath())
                         },
-                        color = Color.Transparent,
+                        color = Color.Red.copy(alpha = 0.5f),
                         style = Stroke(width = brushSize, cap = StrokeCap.Round, join = StrokeJoin.Round)
                     )
                 }
@@ -478,4 +553,86 @@ fun ColorPickerDialog(
             }
         }
     )
+}
+
+// Helper functions
+private fun DrawScope.drawCheckerboardBackground(size: androidx.compose.ui.geometry.Size) {
+    val cellSize = 10.dp.toPx()
+    val cols = (size.width / cellSize).toInt()
+    val rows = (size.height / cellSize).toInt()
+    
+    for (row in 0..rows) {
+        for (col in 0..cols) {
+            val color = if ((row + col) % 2 == 0) Color.White else Color.LightGray
+            drawRect(
+                color = color,
+                topLeft = Offset(col * cellSize, row * cellSize),
+                size = androidx.compose.ui.geometry.Size(cellSize, cellSize)
+            )
+        }
+    }
+}
+
+private suspend fun saveTexture(
+    context: android.content.Context,
+    bitmap: Bitmap?,
+    packId: String,
+    texture: TextureItem
+) {
+    bitmap?.let { bmp ->
+        try {
+            val texturePacksDir = File(context.filesDir, "texture_packs")
+            val packDir = File(texturePacksDir, packId)
+            val texturesDir = File(packDir, "textures")
+            val categoryDir = File(texturesDir, texture.category.displayName.lowercase())
+            
+            if (!categoryDir.exists()) {
+                categoryDir.mkdirs()
+            }
+            
+            val textureFile = File(categoryDir, "${texture.name}.png")
+            val outputStream = FileOutputStream(textureFile)
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.close()
+            
+            Toast.makeText(context, "Texture saved successfully!", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Failed to save texture: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+private suspend fun shareTexture(
+    context: android.content.Context,
+    bitmap: Bitmap?,
+    textureName: String
+) {
+    bitmap?.let { bmp ->
+        try {
+            val cachePath = File(context.cacheDir, "images")
+            cachePath.mkdirs()
+            
+            val stream = FileOutputStream(File(cachePath, "$textureName.png"))
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            stream.close()
+            
+            val newFile = File(cachePath, "$textureName.png")
+            val contentUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                newFile
+            )
+            
+            val shareIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_STREAM, contentUri)
+                type = "image/png"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            context.startActivity(Intent.createChooser(shareIntent, "Share Texture"))
+        } catch (e: Exception) {
+            Toast.makeText(context, "Failed to share texture: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
