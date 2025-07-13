@@ -202,6 +202,23 @@ fun PackifyApp() {
                 )
             }
         }
+        
+        composable("texture_management/{packId}/{category}") { backStackEntry ->
+            val packId = backStackEntry.arguments?.getString("packId") ?: ""
+            val categoryName = backStackEntry.arguments?.getString("category") ?: ""
+            val category = com.packify.packaverse.data.TextureCategory.values().find { it.name == categoryName }
+            category?.let {
+                com.packify.packaverse.ui.screens.TextureManagementScreen(
+                    category = it,
+                    packId = packId,
+                    viewModel = viewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                    onTextureSelected = { texture ->
+                        navController.navigate("texture_editor/$packId/${texture.name}")
+                    }
+                )
+            }
+        }
     }
 }
 

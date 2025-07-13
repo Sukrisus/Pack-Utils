@@ -214,6 +214,7 @@ fun TextureEditorContent(
     onTextureSelected: (TextureItem) -> Unit,
     onPackSelected: (String) -> Unit,
     onExportPack: (String) -> Unit,
+    onNavigateToTextureManagement: (TextureCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -236,7 +237,8 @@ fun TextureEditorContent(
                 textures = textures.filter { it.category == category },
                 viewModel = viewModel,
                 packId = texturePacks.firstOrNull()?.id ?: "",
-                onTextureSelected = onTextureSelected
+                onTextureSelected = onTextureSelected,
+                onNavigateToTextureManagement = onNavigateToTextureManagement
             )
         }
     }
