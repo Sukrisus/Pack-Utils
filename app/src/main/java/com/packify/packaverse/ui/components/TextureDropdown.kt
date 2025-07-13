@@ -75,8 +75,13 @@ fun TextureDropdown(
                         TextureCategory.ENTITY -> Icons.Default.Person
                         TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
                         TextureCategory.GUI -> Icons.Default.Dashboard
+                        TextureCategory.UI -> Icons.Default.Widgets
                         TextureCategory.PARTICLE -> Icons.Default.Star
                         TextureCategory.MISC -> Icons.Default.MoreVert
+                        TextureCategory.MAP -> Icons.Default.Map
+                        TextureCategory.PAINTING -> Icons.Default.Palette
+                        TextureCategory.COLORMAP -> Icons.Default.ColorLens
+                        TextureCategory.MODELS -> Icons.Default.Architecture
                     },
                     contentDescription = null,
                     tint = Color(0xFFFFB6C1),

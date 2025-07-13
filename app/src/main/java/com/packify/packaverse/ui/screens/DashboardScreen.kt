@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -124,6 +125,8 @@ fun DashboardScreen(
                 },
                 onPackSelected = { packId ->
                     selectedPackId = packId
+                    // Load all textures for the selected pack
+                    viewModel.loadAllTextures(packId)
                 },
                 onExportPack = { packId ->
                     selectedPackId = packId
@@ -133,6 +136,16 @@ fun DashboardScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             )
+        }
+        
+        // Auto-select first pack and load textures
+        LaunchedEffect(texturePacks) {
+            if (texturePacks.isNotEmpty() && selectedPackId == null) {
+                val firstPack = texturePacks.first()
+                selectedPackId = firstPack.id
+                // Load all textures for all categories
+                viewModel.loadAllTextures(firstPack.id)
+            }
         }
         
         // Share Dialog
@@ -372,7 +385,10 @@ fun PackSelectionCard(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 4.dp)
+                                .clickable {
+                                    selectedPack = pack
+                                },
                             colors = CardDefaults.cardColors(
                                 containerColor = if (selectedPack?.id == pack.id) 
                                     Color(0xFFFFB6C1).copy(alpha = 0.3f) 

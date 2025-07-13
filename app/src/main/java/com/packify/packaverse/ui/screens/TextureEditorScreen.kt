@@ -165,6 +165,25 @@ fun TextureEditorScreen(
                 }
             )
             
+            // Bottom Toolbar with Save, Exit, Import buttons
+            BottomToolbar(
+                onSave = {
+                    canvasBitmap?.let { bitmap ->
+                        viewModel.saveEditedTexture(packId, texture.category, texture.name, bitmap)
+                        hasUnsavedChanges = false
+                    }
+                },
+                onExit = {
+                    if (hasUnsavedChanges) {
+                        showExitDialog = true
+                    } else {
+                        onNavigateBack()
+                    }
+                },
+                onImport = { showImportDialog = true },
+                hasUnsavedChanges = hasUnsavedChanges
+            )
+            
             // Advanced Color Palette
             AdvancedColorPalette(
                 selectedColor = selectedColor,
@@ -854,4 +873,72 @@ fun AdvancedColorPickerDialog(
             }
         }
     )
+}
+
+@Composable
+fun BottomToolbar(
+    onSave: () -> Unit,
+    onExit: () -> Unit,
+    onImport: () -> Unit,
+    hasUnsavedChanges: Boolean
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Save Button
+            Button(
+                onClick = onSave,
+                enabled = hasUnsavedChanges,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Save, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Save")
+            }
+            
+            // Import Button
+            Button(
+                onClick = onImport,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2196F3),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Upload, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Import")
+            }
+            
+            // Exit Button
+            Button(
+                onClick = onExit,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFF5722),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.ExitToApp, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Exit")
+            }
+        }
+    }
 }

@@ -50,6 +50,11 @@ enum class TextureCategory(val displayName: String, val mcpePath: String, val as
     ENTITY("Entity", "textures/entity/", "entity"),
     ENVIRONMENT("Environment", "textures/environment/", "environment"),
     GUI("GUI", "textures/gui/", "gui"),
+    UI("UI", "textures/ui/", "ui"),
     PARTICLE("Particle", "textures/particle/", "particle"),
-    MISC("Misc", "textures/misc/", "misc")
+    MISC("Misc", "textures/misc/", "misc"),
+    MAP("Map", "textures/map/", "map"),
+    PAINTING("Painting", "textures/painting/", "painting"),
+    COLORMAP("Colormap", "textures/colormap/", "colormap"),
+    MODELS("Models", "textures/models/", "models")
 }
