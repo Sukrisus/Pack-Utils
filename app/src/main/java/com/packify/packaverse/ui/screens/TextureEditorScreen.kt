@@ -56,35 +56,30 @@ fun TextureEditorScreen(
     onNavigateBack: () -> Unit
 ) {
     var currentTool by remember { mutableStateOf(EditorTool.BRUSH) }
-    var brushSize by remember { mutableStateOf(10f) }
-    var brushShape by remember { mutableStateOf(BrushShape.ROUND) }
     var selectedColor by remember { mutableStateOf(Color.Red) }
-    var customColors by remember { mutableStateOf(listOf<Color>()) }
     var showColorPicker by remember { mutableStateOf(false) }
-    var showSaveDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
-    var opacity by remember { mutableStateOf(1f) }
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { 
+        uri?.let {
             viewModel.replaceTexture(packId, texture.mcpePath, uri)
             hasUnsavedChanges = true
             showImportDialog = false
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = "Edit ${texture.name}",
                         fontSize = 20.sp,
@@ -106,7 +101,7 @@ fun TextureEditorScreen(
                     IconButton(onClick = { showImportDialog = true }) {
                         Icon(Icons.Default.Upload, contentDescription = "Import from Device")
                     }
-                    IconButton(onClick = { 
+                    IconButton(onClick = {
                         // Save current texture
                         canvasBitmap?.let { bitmap ->
                             viewModel.saveEditedTexture(packId, texture.category, texture.name, bitmap)
@@ -115,7 +110,7 @@ fun TextureEditorScreen(
                     }) {
                         Icon(Icons.Default.Save, contentDescription = "Save")
                     }
-                    IconButton(onClick = { 
+                    IconButton(onClick = {
                         if (hasUnsavedChanges) {
                             showExitDialog = true
                         } else {
@@ -129,54 +124,102 @@ fun TextureEditorScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
+        },
+        bottomBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { currentTool = EditorTool.BRUSH }) {
+                    Icon(Icons.Default.Brush, contentDescription = "Brush")
+                }
+                IconButton(onClick = { currentTool = EditorTool.ERASER }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Eraser")
+                }
+                IconButton(onClick = { showColorPicker = true }) {
+                    Icon(Icons.Default.ColorLens, contentDescription = "Color Picker")
+                }
+                IconButton(onClick = { showImportDialog = true }) {
+                    Icon(Icons.Default.Upload, contentDescription = "Import from Device")
+                }
+                IconButton(onClick = {
+                    canvasBitmap?.let { bitmap ->
+                        viewModel.saveEditedTexture(packId, texture.category, texture.name, bitmap)
+                        hasUnsavedChanges = false
+                    }
+                }) {
+                    Icon(Icons.Default.Save, contentDescription = "Save")
+                }
+                IconButton(onClick = {
+                    if (hasUnsavedChanges) {
+                        showExitDialog = true
+                    } else {
+                        onNavigateBack()
+                    }
+                }) {
+                    Icon(Icons.Default.Close, contentDescription = "Exit")
+                }
+            }
         }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Advanced Toolbar
-            AdvancedToolbar(
-                currentTool = currentTool,
-                onToolSelected = { currentTool = it },
-                brushSize = brushSize,
-                onBrushSizeChanged = { brushSize = it },
-                brushShape = brushShape,
-                onBrushShapeChanged = { brushShape = it },
-                selectedColor = selectedColor,
-                onColorSelected = { selectedColor = it },
-                opacity = opacity,
-                onOpacityChanged = { opacity = it },
-                onColorPickerClicked = { showColorPicker = true }
-            )
-            
-            // Enhanced Canvas
+            Spacer(modifier = Modifier.height(16.dp))
+            // Show the pixel grid image and drawing canvas
             EnhancedTextureCanvas(
                 texture = texture,
                 currentTool = currentTool,
-                brushSize = brushSize,
-                brushShape = brushShape,
+                brushSize = 10f, // Default size
+                brushShape = BrushShape.ROUND, // Default shape
                 selectedColor = selectedColor,
-                opacity = opacity,
+                opacity = 1f,
                 onDrawingChanged = { hasUnsavedChanges = true },
                 onBitmapUpdated = { bitmap ->
                     canvasBitmap = bitmap
                 }
             )
-            
-            // Advanced Color Palette
-            AdvancedColorPalette(
+        }
+        // Color picker dialog
+        if (showColorPicker) {
+            AdvancedColorPickerDialog(
                 selectedColor = selectedColor,
-                customColors = customColors,
-                onColorSelected = { selectedColor = it },
-                onAddCustomColor = { color ->
-                    customColors = customColors + color
+                onColorSelected = { color ->
+                    selectedColor = color
+                    showColorPicker = false
+                },
+                onDismiss = { showColorPicker = false }
+            )
+        }
+        // Import dialog
+        if (showImportDialog) {
+            AlertDialog(
+                onDismissRequest = { showImportDialog = false },
+                title = { Text("Import Texture") },
+                text = { Text("Import a texture from your device gallery or files. This will replace the current texture.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            imagePickerLauncher.launch("image/*")
+                        }
+                    ) {
+                        Text("Import")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showImportDialog = false }) {
+                        Text("Cancel")
+                    }
                 }
             )
         }
-        
-        // Exit Dialog
+        // Exit dialog
         if (showExitDialog) {
             AlertDialog(
                 onDismissRequest = { showExitDialog = false },
@@ -206,41 +249,6 @@ fun TextureEditorScreen(
                         Text("Exit Without Saving")
                     }
                 }
-            )
-        }
-        
-        // Import Dialog
-        if (showImportDialog) {
-            AlertDialog(
-                onDismissRequest = { showImportDialog = false },
-                title = { Text("Import Texture") },
-                text = { Text("Import a texture from your device gallery or files. This will replace the current texture.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            imagePickerLauncher.launch("image/*")
-                        }
-                    ) {
-                        Text("Import")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showImportDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
-        
-        // Advanced Color Picker Dialog
-        if (showColorPicker) {
-            AdvancedColorPickerDialog(
-                selectedColor = selectedColor,
-                onColorSelected = { color ->
-                    selectedColor = color
-                    showColorPicker = false
-                },
-                onDismiss = { showColorPicker = false }
             )
         }
     }
@@ -283,9 +291,9 @@ fun AdvancedToolbar(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Brush Size and Shape
             if (currentTool == EditorTool.BRUSH || currentTool == EditorTool.ERASER || currentTool == EditorTool.SPRAY_PAINT) {
                 Row(
@@ -304,9 +312,9 @@ fun AdvancedToolbar(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    
+
                     if (currentTool == EditorTool.BRUSH) {
                         Column {
                             Text(
@@ -328,7 +336,7 @@ fun AdvancedToolbar(
                     }
                 }
             }
-            
+
             // Color and Opacity
             if (currentTool == EditorTool.BRUSH || currentTool == EditorTool.FILL || currentTool == EditorTool.SPRAY_PAINT) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -348,9 +356,9 @@ fun AdvancedToolbar(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    
+
                     Column {
                         Text(
                             text = "Color",
@@ -384,7 +392,7 @@ fun AdvancedToolButton(
         EditorTool.SPRAY_PAINT -> Icons.Default.Grain to "Spray Paint"
         EditorTool.PENCIL -> Icons.Default.Edit to "Pencil"
     }
-    
+
     Card(
         modifier = Modifier
             .size(56.dp)
@@ -426,7 +434,7 @@ fun BrushShapeButton(
         BrushShape.DIAMOND -> Icons.Default.Diamond
         BrushShape.STAR -> Icons.Default.Star
     }
-    
+
     Card(
         modifier = Modifier
             .size(32.dp)
@@ -466,7 +474,7 @@ fun EnhancedTextureCanvas(
     var drawingPoints by remember { mutableStateOf(listOf<Offset>()) }
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var canvasSize by remember { mutableStateOf<androidx.compose.ui.geometry.Size?>(null) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -499,7 +507,7 @@ fun EnhancedTextureCanvas(
                                 change.consume()
                                 val newPoint = change.position
                                 drawingPoints = drawingPoints + newPoint
-                                
+
                                 lastPoint?.let { last ->
                                     when (currentTool) {
                                         EditorTool.BRUSH, EditorTool.PENCIL -> {
@@ -525,13 +533,13 @@ fun EnhancedTextureCanvas(
                             onDragEnd = {
                                 lastPoint = null
                                 drawingPoints = emptyList()
-                                
+
                                 // Handle fill tool
                                 if (currentTool == EditorTool.FILL) {
                                     // TODO: Implement flood fill algorithm
                                     onDrawingChanged()
                                 }
-                                
+
                                 // Capture bitmap after drawing
                                 canvasSize?.let { size ->
                                     val bitmap = android.graphics.Bitmap.createBitmap(
@@ -551,7 +559,7 @@ fun EnhancedTextureCanvas(
                 val checkerSize = 20f
                 val checkerColor1 = Color.White
                 val checkerColor2 = Color.LightGray
-                
+
                 for (x in 0 until (size.width / checkerSize).toInt() + 1) {
                     for (y in 0 until (size.height / checkerSize).toInt() + 1) {
                         val isEven = (x + y) % 2 == 0
@@ -563,10 +571,10 @@ fun EnhancedTextureCanvas(
                         )
                     }
                 }
-                
+
                 // Draw the texture background
                 // TODO: Load and draw actual texture bitmap
-                
+
                 // Draw the current path
                 when (currentTool) {
                     EditorTool.BRUSH, EditorTool.PENCIL -> {
@@ -611,7 +619,7 @@ fun EnhancedTextureCanvas(
                     }
                     else -> {}
                 }
-                
+
                 // Draw brush preview
                 lastPoint?.let { point ->
                     when (brushShape) {
@@ -675,7 +683,7 @@ fun AdvancedColorPalette(
         Color(0xFFFF8C00), Color(0xFF9370DB), Color(0xFF20B2AA),
         Color(0xFFDC143C), Color(0xFF228B22), Color(0xFF4B0082)
     ) + customColors
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -693,9 +701,9 @@ fun AdvancedColorPalette(
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -707,9 +715,9 @@ fun AdvancedColorPalette(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -720,7 +728,7 @@ fun AdvancedColorPalette(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 Button(
                     onClick = {
                         val newColor = Color(
@@ -778,9 +786,9 @@ fun AdvancedColorPickerDialog(
     var green by remember { mutableStateOf(selectedColor.green) }
     var blue by remember { mutableStateOf(selectedColor.blue) }
     var alpha by remember { mutableStateOf(selectedColor.alpha) }
-    
+
     val currentColor = Color(red, green, blue, alpha)
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Advanced Color Picker") },
@@ -794,9 +802,9 @@ fun AdvancedColorPickerDialog(
                         .background(currentColor, RoundedCornerShape(8.dp))
                         .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // RGB Sliders
                 Text("Red: ${(red * 255).toInt()}")
                 Slider(
@@ -807,7 +815,7 @@ fun AdvancedColorPickerDialog(
                         activeTrackColor = Color.Red
                     )
                 )
-                
+
                 Text("Green: ${(green * 255).toInt()}")
                 Slider(
                     value = green,
@@ -817,7 +825,7 @@ fun AdvancedColorPickerDialog(
                         activeTrackColor = Color.Green
                     )
                 )
-                
+
                 Text("Blue: ${(blue * 255).toInt()}")
                 Slider(
                     value = blue,
@@ -827,7 +835,7 @@ fun AdvancedColorPickerDialog(
                         activeTrackColor = Color.Blue
                     )
                 )
-                
+
                 Text("Alpha: ${(alpha * 255).toInt()}")
                 Slider(
                     value = alpha,

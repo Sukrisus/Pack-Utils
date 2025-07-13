@@ -4,9 +4,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.packify.packaverse.data.*
+import com.packify.packaverse.viewmodel.TexturePackViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.*
@@ -149,19 +151,35 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
+    private fun getProjectsUri(): Uri? {
+        // This assumes you have a way to get the ViewModel or pass the URI in
+        val sharedPreferences = context.getSharedPreferences("packify_settings", Context.MODE_PRIVATE)
+        val uriString = sharedPreferences.getString("projects_saf_uri", null)
+        return uriString?.let { Uri.parse(it) }
+    }
+
+    private fun getOrCreatePackDir(packName: String): DocumentFile? {
+        val projectsUri = getProjectsUri() ?: return null
+        val projectsDir = DocumentFile.fromTreeUri(context, projectsUri) ?: return null
+        return projectsDir.findFile(packName) ?: projectsDir.createDirectory(packName)
+    }
+
+    private fun getOrCreateCategoryDir(packName: String, category: TextureCategory): DocumentFile? {
+        val packDir = getOrCreatePackDir(packName) ?: return null
+        val texturesDir = packDir.findFile("textures") ?: packDir.createDirectory("textures")
+        return texturesDir?.findFile(category.assetPath) ?: texturesDir?.createDirectory(category.assetPath)
+    }
+
     suspend fun saveEditedTexture(packId: String, category: TextureCategory, textureName: String, bitmap: Bitmap): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
-            val categoryDir = File(packDir, category.mcpePath)
-            categoryDir.mkdirs()
-            
-            val textureFile = File(categoryDir, "$textureName.png")
-            
-            FileOutputStream(textureFile).use { outputStream ->
+            val categoryDir = getOrCreateCategoryDir(packId, category)
+            if (categoryDir == null) return@withContext Result.failure(Exception("Cannot access category directory"))
+            val textureFile = categoryDir.findFile("$textureName.png") ?: categoryDir.createFile("image/png", textureName)
+            if (textureFile == null) return@withContext Result.failure(Exception("Cannot create texture file"))
+            context.contentResolver.openOutputStream(textureFile.uri)?.use { outputStream ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
             }
-            
-            Result.success(textureFile.absolutePath)
+            Result.success(textureFile.uri.toString())
         } catch (e: Exception) {
             Result.failure(e)
         }

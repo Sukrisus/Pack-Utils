@@ -25,154 +25,86 @@ import com.packify.packaverse.data.TexturePack
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import com.packify.packaverse.ui.components.BottomNavigationBar
 import com.packify.packaverse.ui.components.TextureDropdown
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.background
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: TexturePackViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToSettings: () -> Unit = {},
-    onNavigateToTextureEditor: (String, String) -> Unit = { _, _ -> }
+    onNavigateToSettings: () -> Unit,
+    onNavigateToCategory: (TextureCategory) -> Unit
 ) {
-    val texturePacks by viewModel.texturePacks.collectAsState()
-    val textures by viewModel.textures.collectAsState()
-    val isLoading by viewModel.isLoading
-    val errorMessage by viewModel.errorMessage
-    val successMessage by viewModel.successMessage
-    val context = LocalContext.current
-    
-    var selectedPackId by remember { mutableStateOf<String?>(null) }
-    var showShareDialog by remember { mutableStateOf(false) }
-    
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/zip")
-    ) { uri: Uri? ->
-        uri?.let { exportUri ->
-            selectedPackId?.let { packId ->
-                viewModel.exportTexturePack(packId, exportUri)
-            }
-        }
-    }
-    
-    LaunchedEffect(Unit) {
-        viewModel.loadTexturePacks()
-    }
-    
+    val categories = listOf(
+        TextureCategory.ENTITY,
+        TextureCategory.ENVIRONMENT,
+        TextureCategory.ITEMS,
+        TextureCategory.UI,
+        TextureCategory.GUI,
+        TextureCategory.PARTICLE,
+        TextureCategory.MISC
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
-                    Text(
-                        text = "Texture Editor",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Normal
-                    )
-                },
+                title = { Text("Addons Maker for Minecraft") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showShareDialog = true }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
-                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        },
-        bottomBar = {
-            BottomNavigationBar(
-                onNavigateToHome = onNavigateBack,
-                onNavigateToDashboard = {},
-                onNavigateToSettings = onNavigateToSettings,
-                currentRoute = "dashboard"
-            )
-        }
-    ) { paddingValues ->
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    color = Color(0xFFFFB6C1)
-                )
-            }
-        } else if (texturePacks.isEmpty()) {
-            EmptyStateView(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            )
-        } else {
-            TextureEditorContent(
-                texturePacks = texturePacks,
-                textures = textures,
-                viewModel = viewModel,
-                errorMessage = errorMessage,
-                successMessage = successMessage,
-                onTextureSelected = { texture ->
-                    selectedPackId?.let { packId ->
-                        onNavigateToTextureEditor(packId, texture.name)
-                    }
-                },
-                onPackSelected = { packId ->
-                    selectedPackId = packId
-                },
-                onExportPack = { packId ->
-                    selectedPackId = packId
-                    exportLauncher.launch("${texturePacks.find { it.id == packId }?.name ?: "texture_pack"}.zip")
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            )
-        }
-        
-        // Share Dialog
-        if (showShareDialog) {
-            ShareDialog(
-                texturePacks = texturePacks,
-                onDismiss = { showShareDialog = false },
-                onSharePack = { packId ->
-                    selectedPackId = packId
-                    exportLauncher.launch("${texturePacks.find { it.id == packId }?.name ?: "texture_pack"}.zip")
-                    showShareDialog = false
-                },
-                onShareApp = {
-                    val shareIntent = Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, "Check out Packify - MCPE Texture Pack Editor! Create amazing texture packs for Minecraft PE!")
-                        putExtra(Intent.EXTRA_SUBJECT, "Packify - MCPE Texture Pack Editor")
-                    }
-                    try {
-                        context.startActivity(Intent.createChooser(shareIntent, "Share via"))
-                    } catch (e: Exception) {
-                        // Handle case where no app can handle the share intent
-                        viewModel.showError("No app available to share")
-                    }
-                    showShareDialog = false
                 }
             )
         }
-        
-        // Error/Success Messages
-        errorMessage?.let { message ->
-            LaunchedEffect(message) {
-                viewModel.clearMessages()
-            }
-        }
-        
-        successMessage?.let { message ->
-            LaunchedEffect(message) {
-                viewModel.clearMessages()
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            categories.forEach { category ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .clickable { onNavigateToCategory(category) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF3C2F2F) // Minecraft brown
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Placeholder for future icon
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .background(Color(0xFF6B8E23), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("", color = Color.Transparent)
+                        }
+                        Spacer(modifier = Modifier.width(24.dp))
+                        Text(
+                            text = category.displayName,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
             }
         }
     }

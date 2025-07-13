@@ -21,6 +21,18 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
     
     private val repository = TexturePackRepository(application.applicationContext)
     private val sharedPreferences = application.getSharedPreferences("packify_settings", Context.MODE_PRIVATE)
+
+    // SAF URI for persistent projects directory
+    private val PROJECTS_URI_KEY = "projects_saf_uri"
+
+    fun setProjectsUri(uri: Uri) {
+        sharedPreferences.edit().putString(PROJECTS_URI_KEY, uri.toString()).apply()
+    }
+
+    fun getProjectsUri(): Uri? {
+        val uriString = sharedPreferences.getString(PROJECTS_URI_KEY, null)
+        return uriString?.let { Uri.parse(it) }
+    }
     
     private val _texturePacks = MutableStateFlow<List<TexturePack>>(emptyList())
     val texturePacks: StateFlow<List<TexturePack>> = _texturePacks.asStateFlow()

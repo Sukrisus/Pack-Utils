@@ -14,6 +14,41 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.packify.packaverse.ui.components.BottomNavigationBar
+import com.packify.packaverse.data.TextureCategory
+import com.packify.packaverse.data.TextureItem
+import com.packify.packaverse.viewmodel.TexturePackViewModel
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import coil.compose.AsyncImage
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import java.io.IOException
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.packify.packaverse.data.TextureCategory
+import com.packify.packaverse.data.TextureItem
+import com.packify.packaverse.viewmodel.TexturePackViewModel
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import coil.compose.AsyncImage
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import java.io.IOException
+import androidx.compose.runtime.remember
+import androidx.compose.ui.state.MutableState
+import androidx.compose.ui.state.remember
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,6 +161,126 @@ fun ActionButton(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
+        }
+    }
+}
+
+@Composable
+fun CategoryGridScreen(
+    category: TextureCategory,
+    textures: List<TextureItem>,
+    onTextureClick: (TextureItem) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(
+            text = category.displayName,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(textures) { texture ->
+                Card(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .clickable { onTextureClick(texture) },
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = texture.originalPath,
+                            contentDescription = texture.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.FillBounds
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BaseTextureLibraryScreen(
+    category: TextureCategory,
+    onTextureSelected: (String) -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    val context = LocalContext.current
+    var textureList by remember { mutableStateOf(listOf<String>()) }
+
+    LaunchedEffect(category) {
+        try {
+            val assetManager = context.assets
+            val files = assetManager.list("base/${category.assetPath}")
+            textureList = files?.filter { it.endsWith(".png") || it.endsWith(".jpg") } ?: emptyList()
+        } catch (e: IOException) {
+            textureList = emptyList()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Select Texture from Library") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            Text(
+                text = category.displayName,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(textureList) { fileName ->
+                    Card(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .clickable { onTextureSelected(fileName) },
+                        shape = RoundedCornerShape(8.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // Load from assets
+                            AsyncImage(
+                                model = "file:///android_asset/base/${category.assetPath}/$fileName",
+                                contentDescription = fileName,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.FillBounds
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
