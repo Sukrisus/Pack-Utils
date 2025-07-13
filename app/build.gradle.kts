@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.mcpe.texturepackmaker"
+    namespace = "com.packify.packaverse"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.mcpe.texturepackmaker"
+        applicationId = "com.packify.packaverse"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -65,6 +65,7 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation("io.coil-kt:coil-compose:2.5.0")
     
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

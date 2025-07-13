@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker
+package com.packify.packaverse
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,27 +11,28 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.mcpe.texturepackmaker.ui.screens.HomeScreen
-import com.mcpe.texturepackmaker.ui.screens.CreatePackScreen
-import com.mcpe.texturepackmaker.ui.screens.EditPackScreen
-import com.mcpe.texturepackmaker.ui.screens.PackListScreen
-import com.mcpe.texturepackmaker.ui.screens.DashboardScreen
-import com.mcpe.texturepackmaker.ui.screens.SettingsScreen
-import com.mcpe.texturepackmaker.ui.theme.MCPETexturePackMakerTheme
+import com.packify.packaverse.ui.screens.HomeScreen
+import com.packify.packaverse.ui.screens.CreatePackScreen
+import com.packify.packaverse.ui.screens.EditPackScreen
+import com.packify.packaverse.ui.screens.PackListScreen
+import com.packify.packaverse.ui.screens.DashboardScreen
+import com.packify.packaverse.ui.screens.SettingsScreen
+import com.packify.packaverse.ui.screens.TextureEditorScreen
+import com.packify.packaverse.ui.theme.PackifyTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
-import com.mcpe.texturepackmaker.viewmodel.TexturePackViewModel
+import com.packify.packaverse.viewmodel.TexturePackViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MCPETexturePackMakerTheme {
+            PackifyTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MCPETexturePackMakerApp()
+                    PackifyApp()
                 }
             }
         }
@@ -39,7 +40,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MCPETexturePackMakerApp() {
+fun PackifyApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val viewModel: TexturePackViewModel = viewModel { 
@@ -93,7 +94,10 @@ fun MCPETexturePackMakerApp() {
             DashboardScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToSettings = { navController.navigate("settings") }
+                onNavigateToSettings = { navController.navigate("settings") },
+                onNavigateToTextureEditor = { packId, textureName ->
+                    navController.navigate("texture_editor/$packId/$textureName")
+                }
             )
         }
         
@@ -107,6 +111,20 @@ fun MCPETexturePackMakerApp() {
                     navController.popBackStack("dashboard", false)
                 }
             )
+        }
+        
+        composable("texture_editor/{packId}/{textureName}") { backStackEntry ->
+            val packId = backStackEntry.arguments?.getString("packId") ?: ""
+            val textureName = backStackEntry.arguments?.getString("textureName") ?: ""
+            val texture = viewModel.getTextureByName(packId, textureName)
+            texture?.let {
+                TextureEditorScreen(
+                    texture = it,
+                    viewModel = viewModel,
+                    packId = packId,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

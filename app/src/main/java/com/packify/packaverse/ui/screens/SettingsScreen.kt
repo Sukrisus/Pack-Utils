@@ -1,5 +1,6 @@
-package com.mcpe.texturepackmaker.ui.screens
+package com.packify.packaverse.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -9,10 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mcpe.texturepackmaker.ui.components.BottomNavigationBar
+import com.packify.packaverse.ui.components.BottomNavigationBar
+import com.packify.packaverse.ui.theme.rememberThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,9 +24,13 @@ fun SettingsScreen(
     onNavigateToHome: () -> Unit = {},
     onNavigateToDashboard: () -> Unit = {}
 ) {
-    var isDarkMode by remember { mutableStateOf(false) }
+    val themeManager = rememberThemeManager()
+    val isDarkMode by themeManager.isDarkMode.collectAsState()
+    val context = LocalContext.current
+    
     var autoSave by remember { mutableStateOf(true) }
     var highQualityExport by remember { mutableStateOf(true) }
+    var showResetDialog by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
@@ -70,7 +77,7 @@ fun SettingsScreen(
                     subtitle = "Use dark theme for the app",
                     icon = Icons.Default.DarkMode,
                     checked = isDarkMode,
-                    onCheckedChange = { isDarkMode = it }
+                    onCheckedChange = { themeManager.toggleTheme() }
                 )
             }
             
@@ -131,7 +138,7 @@ fun SettingsScreen(
             
             // Reset Settings Button
             Button(
-                onClick = { /* Reset settings logic */ },
+                onClick = { showResetDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFFFB6C1),
@@ -143,6 +150,59 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Reset to Defaults")
             }
+            
+            // Share App Button
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Button(
+                onClick = {
+                    val shareIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "Check out Packify - MCPE Texture Pack Editor! Download it now.")
+                        putExtra(Intent.EXTRA_SUBJECT, "Packify - MCPE Texture Pack Editor")
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFB6C1),
+                    contentColor = Color.Black
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Share, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Share App")
+            }
+        }
+        
+        // Reset Dialog
+        if (showResetDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetDialog = false },
+                title = { Text("Reset to Defaults") },
+                text = { Text("Are you sure you want to reset all settings to their default values?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            // Reset all settings
+                            themeManager.setTheme(true)
+                            autoSave = true
+                            highQualityExport = true
+                            showResetDialog = false
+                        }
+                    ) {
+                        Text("Reset")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showResetDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
         }
     }
 }

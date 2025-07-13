@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.ui.screens
+package com.packify.packaverse.ui.screens
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,17 +17,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mcpe.texturepackmaker.data.TextureCategory
-import com.mcpe.texturepackmaker.data.TextureItem
-import com.mcpe.texturepackmaker.viewmodel.TexturePackViewModel
-import com.mcpe.texturepackmaker.ui.components.BottomNavigationBar
+import com.packify.packaverse.data.TextureCategory
+import com.packify.packaverse.data.TextureItem
+import com.packify.packaverse.viewmodel.TexturePackViewModel
+import com.packify.packaverse.ui.components.BottomNavigationBar
+import com.packify.packaverse.ui.components.TextureDropdown
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: TexturePackViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToTextureEditor: (String, String) -> Unit = { _, _ -> }
 ) {
     val texturePacks by viewModel.texturePacks.collectAsState()
     val textures by viewModel.textures.collectAsState()
@@ -239,202 +241,31 @@ fun TextureEditorContent(
             }
         }
         
-        // Category selector
+        // Category dropdowns
         if (selectedPack != null) {
-            Card(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                    .padding(horizontal = 16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Texture Categories",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    LazyColumn {
-                        items(TextureCategory.values()) { category ->
-                            CategoryItem(
-                                category = category,
-                                isSelected = selectedCategory == category,
-                                onClick = { 
-                                    selectedCategory = category
-                                    viewModel.loadTextures(selectedPack!!.id, category)
-                                    viewModel.clearMessages()
-                                }
-                            )
+                items(TextureCategory.values()) { category ->
+                    val categoryTextures = textures.filter { it.category == category }
+                    TextureDropdown(
+                        category = category,
+                        textures = categoryTextures,
+                        viewModel = viewModel,
+                        packId = selectedPack!!.id,
+                        onTextureSelected = { texture ->
+                            onNavigateToTextureEditor(selectedPack!!.id, texture.name)
                         }
-                    }
+                    )
                 }
             }
         }
         
-        // Texture list
-        if (selectedCategory != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "${selectedCategory!!.displayName} Textures",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    if (textures.isEmpty()) {
-                        Text(
-                            text = "No textures found in this category. Add some texture files to get started.",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    } else {
-                        LazyColumn {
-                            items(textures) { texture ->
-                                TextureItem(
-                                    texture = texture,
-                                    onReplaceTexture = { uri ->
-                                        viewModel.replaceTexture(selectedPack!!.id, texture.mcpePath, uri)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
+
     }
 }
 
-@Composable
-fun CategoryItem(
-    category: TextureCategory,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFFFFB6C1).copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant
-        ),
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = when (category) {
-                    TextureCategory.BLOCKS -> Icons.Default.ViewInAr
-                    TextureCategory.ITEMS -> Icons.Default.Inventory
-                    TextureCategory.ENTITY -> Icons.Default.Person
-                    TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
-                    TextureCategory.GUI -> Icons.Default.Dashboard
-                    TextureCategory.PARTICLE -> Icons.Default.Star
-                    TextureCategory.MISC -> Icons.Default.MoreVert
-                },
-                contentDescription = null,
-                tint = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Text(
-                text = category.displayName,
-                fontSize = 16.sp,
-                fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
-                color = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
 
-@Composable
-fun TextureItem(
-    texture: TextureItem,
-    onReplaceTexture: (Uri) -> Unit
-) {
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { onReplaceTexture(it) }
-    }
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Image,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = texture.name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = texture.mcpePath,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-            }
-            
-            Button(
-                onClick = { imagePickerLauncher.launch("image/*") },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFB6C1),
-                    contentColor = Color.Black
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Replace", fontSize = 12.sp)
-            }
-        }
-    }
-}
 

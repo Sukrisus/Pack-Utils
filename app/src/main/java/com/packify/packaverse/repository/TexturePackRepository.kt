@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.repository
+package com.packify.packaverse.repository
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,7 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.mcpe.texturepackmaker.data.*
+import com.packify.packaverse.data.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.*
@@ -81,17 +81,43 @@ class TexturePackRepository(private val context: Context) {
             val packDir = File(texturePacksDir, packId)
             val categoryDir = File(packDir, category.mcpePath)
             
-            if (!categoryDir.exists()) {
-                return@withContext emptyList()
+            // First, load base textures from assets
+            val baseTextures = loadBaseTextures(category)
+            
+            // Then, load custom textures from pack directory
+            val customTextures = if (categoryDir.exists()) {
+                categoryDir.listFiles()?.filter { it.isFile && it.extension.lowercase() in listOf("png", "jpg", "jpeg") }
+                    ?.map { file ->
+                        TextureItem(
+                            name = file.nameWithoutExtension,
+                            originalPath = file.absolutePath,
+                            mcpePath = "${category.mcpePath}${file.name}",
+                            category = category,
+                            isCustom = true
+                        )
+                    } ?: emptyList()
+            } else {
+                emptyList()
             }
             
-            categoryDir.listFiles()?.filter { it.isFile && it.extension.lowercase() in listOf("png", "jpg", "jpeg") }
-                ?.map { file ->
+            // Combine base and custom textures
+            baseTextures + customTextures
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    private fun loadBaseTextures(category: TextureCategory): List<TextureItem> {
+        return try {
+            val assetPath = "base/${category.assetPath}"
+            context.assets.list(assetPath)?.filter { it.lowercase().endsWith(".png") }
+                ?.map { fileName ->
                     TextureItem(
-                        name = file.nameWithoutExtension,
-                        originalPath = file.absolutePath,
-                        mcpePath = "${category.mcpePath}${file.name}",
-                        category = category
+                        name = fileName.substringBeforeLast("."),
+                        originalPath = "asset://$assetPath/$fileName",
+                        mcpePath = "${category.mcpePath}$fileName",
+                        category = category,
+                        isCustom = false
                     )
                 } ?: emptyList()
         } catch (e: Exception) {
@@ -108,6 +134,33 @@ class TexturePackRepository(private val context: Context) {
             textureFile.parentFile?.mkdirs()
             
             context.contentResolver.openInputStream(newTextureUri)?.use { inputStream ->
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                
+                FileOutputStream(textureFile).use { outputStream ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                }
+                
+                bitmap.recycle()
+            }
+            
+            Result.success(textureFile.absolutePath)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun addTexture(packId: String, category: TextureCategory, textureUri: Uri): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val packDir = File(texturePacksDir, packId)
+            val categoryDir = File(packDir, category.mcpePath)
+            categoryDir.mkdirs()
+            
+            // Generate a unique filename
+            val timestamp = System.currentTimeMillis()
+            val fileName = "custom_texture_$timestamp.png"
+            val textureFile = File(categoryDir, fileName)
+            
+            context.contentResolver.openInputStream(textureUri)?.use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 
                 FileOutputStream(textureFile).use { outputStream ->

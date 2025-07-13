@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.ui.screens
+package com.packify.packaverse.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mcpe.texturepackmaker.viewmodel.TexturePackViewModel
+import com.packify.packaverse.viewmodel.TexturePackViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

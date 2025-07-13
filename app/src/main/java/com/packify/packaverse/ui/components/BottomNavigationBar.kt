@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.ui.components
+package com.packify.packaverse.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
