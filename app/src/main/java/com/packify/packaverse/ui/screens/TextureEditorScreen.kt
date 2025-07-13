@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,15 +32,21 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import com.packify.packaverse.data.TextureCategory
 import com.packify.packaverse.data.TextureItem
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
 enum class EditorTool {
-    BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
+    BRUSH, ERASER, COLOR_PICKER, FILL, IMPORT, SAVE, EXIT
 }
 
 enum class BrushShape {
@@ -60,12 +68,17 @@ fun TextureEditorScreen(
     var customColors by remember { mutableStateOf(listOf<Color>()) }
     var showColorPicker by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var opacity by remember { mutableStateOf(1f) }
+    var canvasSize by remember { mutableStateOf(300.dp) }
+    var strokePaths by remember { mutableStateOf<List<StrokePath>>(emptyList()) }
+    var currentPath by remember { mutableStateOf<StrokePath?>(null) }
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
     
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -90,7 +103,7 @@ fun TextureEditorScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasUnsavedChanges) {
-                            showSaveDialog = true
+                            showExitDialog = true
                         } else {
                             onNavigateBack()
                         }
@@ -100,17 +113,10 @@ fun TextureEditorScreen(
                 },
                 actions = {
                     IconButton(onClick = { showImportDialog = true }) {
-                        Icon(Icons.Default.Upload, contentDescription = "Import")
-                    }
-                    IconButton(onClick = { 
-                        // Save current project
-                        viewModel.saveCurrentProject()
-                        hasUnsavedChanges = false
-                    }) {
-                        Icon(Icons.Default.Save, contentDescription = "Save")
+                        Icon(Icons.Default.FileUpload, contentDescription = "Import")
                     }
                     IconButton(onClick = { showSaveDialog = true }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Default.Save, contentDescription = "Save")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -124,527 +130,302 @@ fun TextureEditorScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Advanced Toolbar
-            AdvancedToolbar(
+            // Tool Bar
+            ToolBar(
                 currentTool = currentTool,
-                onToolSelected = { currentTool = it },
-                brushSize = brushSize,
-                onBrushSizeChanged = { brushSize = it },
-                brushShape = brushShape,
-                onBrushShapeChanged = { brushShape = it },
-                selectedColor = selectedColor,
-                onColorSelected = { selectedColor = it },
-                opacity = opacity,
-                onOpacityChanged = { opacity = it },
-                onColorPickerClicked = { showColorPicker = true }
+                onToolSelected = { tool ->
+                    when (tool) {
+                        EditorTool.SAVE -> showSaveDialog = true
+                        EditorTool.EXIT -> {
+                            if (hasUnsavedChanges) {
+                                showExitDialog = true
+                            } else {
+                                onNavigateBack()
+                            }
+                        }
+                        EditorTool.IMPORT -> showImportDialog = true
+                        EditorTool.COLOR_PICKER -> showColorPicker = true
+                        else -> currentTool = tool
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
             
-            // Enhanced Canvas
-            EnhancedTextureCanvas(
-                texture = texture,
-                currentTool = currentTool,
-                brushSize = brushSize,
-                brushShape = brushShape,
-                selectedColor = selectedColor,
-                opacity = opacity,
-                onDrawingChanged = { hasUnsavedChanges = true }
-            )
-            
-            // Advanced Color Palette
-            AdvancedColorPalette(
-                selectedColor = selectedColor,
-                customColors = customColors,
-                onColorSelected = { selectedColor = it },
-                onAddCustomColor = { color ->
-                    customColors = customColors + color
-                }
-            )
-        }
-        
-        // Save Dialog
-        if (showSaveDialog) {
-            AlertDialog(
-                onDismissRequest = { showSaveDialog = false },
-                title = { Text("Save Changes") },
-                text = { Text("Do you want to save your changes before closing?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.saveCurrentProject()
-                            hasUnsavedChanges = false
-                            showSaveDialog = false
-                            onNavigateBack()
-                        }
-                    ) {
-                        Text("Save")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showSaveDialog = false
-                            onNavigateBack()
-                        }
-                    ) {
-                        Text("Don't Save")
-                    }
-                }
-            )
-        }
-        
-        // Import Dialog
-        if (showImportDialog) {
-            AlertDialog(
-                onDismissRequest = { showImportDialog = false },
-                title = { Text("Import Texture") },
-                text = { Text("Import a texture from your device gallery or files. This will replace the current texture.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            imagePickerLauncher.launch("image/*")
-                        }
-                    ) {
-                        Text("Import")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showImportDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
-        
-        // Advanced Color Picker Dialog
-        if (showColorPicker) {
-            AdvancedColorPickerDialog(
-                selectedColor = selectedColor,
-                onColorSelected = { color ->
-                    selectedColor = color
-                    showColorPicker = false
-                },
-                onDismiss = { showColorPicker = false }
-            )
-        }
-    }
-}
-
-@Composable
-fun AdvancedToolbar(
-    currentTool: EditorTool,
-    onToolSelected: (EditorTool) -> Unit,
-    brushSize: Float,
-    onBrushSizeChanged: (Float) -> Unit,
-    brushShape: BrushShape,
-    onBrushShapeChanged: (BrushShape) -> Unit,
-    selectedColor: Color,
-    onColorSelected: (Color) -> Unit,
-    opacity: Float,
-    onOpacityChanged: (Float) -> Unit,
-    onColorPickerClicked: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Tools Row
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Canvas Area
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
-                items(EditorTool.values()) { tool ->
-                    AdvancedToolButton(
-                        tool = tool,
-                        isSelected = currentTool == tool,
-                        onClick = { onToolSelected(tool) }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    DrawingCanvas(
+                        modifier = Modifier.size(canvasSize),
+                        currentTool = currentTool,
+                        brushSize = brushSize,
+                        brushShape = brushShape,
+                        selectedColor = selectedColor,
+                        opacity = opacity,
+                        strokePaths = strokePaths,
+                        currentPath = currentPath,
+                        onStrokePathChanged = { path ->
+                            currentPath = path
+                        },
+                        onStrokeComplete = { path ->
+                            strokePaths = strokePaths + path
+                            currentPath = null
+                            hasUnsavedChanges = true
+                        }
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Brush Size and Shape
-            if (currentTool == EditorTool.BRUSH || currentTool == EditorTool.ERASER || currentTool == EditorTool.SPRAY_PAINT) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Size: ${brushSize.toInt()}",
-                            fontSize = 14.sp
-                        )
-                        Slider(
-                            value = brushSize,
-                            onValueChange = onBrushSizeChanged,
-                            valueRange = 1f..50f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+            // Properties Panel
+            PropertiesPanel(
+                brushSize = brushSize,
+                onBrushSizeChange = { brushSize = it },
+                brushShape = brushShape,
+                onBrushShapeChange = { brushShape = it },
+                opacity = opacity,
+                onOpacityChange = { opacity = it },
+                selectedColor = selectedColor,
+                customColors = customColors,
+                onColorSelected = { color ->
+                    selectedColor = color
+                    if (!customColors.contains(color)) {
+                        customColors = customColors + color
                     }
-                    
-                    Spacer(modifier = Modifier.width(16.dp))
-                    
-                    if (currentTool == EditorTool.BRUSH) {
-                        Column {
-                            Text(
-                                text = "Shape",
-                                fontSize = 14.sp
-                            )
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                items(BrushShape.values()) { shape ->
-                                    BrushShapeButton(
-                                        shape = shape,
-                                        isSelected = brushShape == shape,
-                                        onClick = { onBrushShapeChanged(shape) }
-                                    )
-                                }
-                            }
-                        }
-                    }
+                },
+                onShowColorPicker = { showColorPicker = true },
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+    
+    // Color Picker Dialog
+    if (showColorPicker) {
+        ColorPickerDialog(
+            currentColor = selectedColor,
+            onColorSelected = { color ->
+                selectedColor = color
+                if (!customColors.contains(color)) {
+                    customColors = customColors + color
                 }
-            }
-            
-            // Color and Opacity
-            if (currentTool == EditorTool.BRUSH || currentTool == EditorTool.FILL || currentTool == EditorTool.SPRAY_PAINT) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Opacity: ${(opacity * 100).toInt()}%",
-                            fontSize = 14.sp
-                        )
-                        Slider(
-                            value = opacity,
-                            onValueChange = onOpacityChanged,
-                            valueRange = 0.1f..1f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                showColorPicker = false
+            },
+            onDismiss = { showColorPicker = false }
+        )
+    }
+    
+    // Save Dialog
+    if (showSaveDialog) {
+        SaveDialog(
+            textureName = texture.name,
+            textureCategory = texture.category,
+            onSave = { category, name ->
+                scope.launch {
+                    // Save to textures/[dropdown name]/[image name] format
+                    val categoryName = category.name.lowercase()
+                    val fileName = "$name.png"
+                    val path = "textures/$categoryName/$fileName"
                     
-                    Spacer(modifier = Modifier.width(16.dp))
+                    // Create the bitmap from the canvas
+                    val bitmap = createBitmapFromCanvas(strokePaths, canvasSize, density)
                     
-                    Column {
-                        Text(
-                            text = "Color",
-                            fontSize = 14.sp
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(selectedColor, RoundedCornerShape(8.dp))
-                                .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                                .clickable { onColorPickerClicked() }
-                        )
-                    }
+                    // Save the bitmap
+                    viewModel.saveTextureToPath(packId, path, bitmap)
+                    
+                    hasUnsavedChanges = false
+                    showSaveDialog = false
                 }
-            }
+            },
+            onDismiss = { showSaveDialog = false }
+        )
+    }
+    
+    // Exit Dialog
+    if (showExitDialog) {
+        ExitDialog(
+            onSave = { showSaveDialog = true },
+            onExit = { 
+                hasUnsavedChanges = false
+                onNavigateBack()
+            },
+            onDismiss = { showExitDialog = false }
+        )
+    }
+    
+    // Import Dialog
+    if (showImportDialog) {
+        ImportDialog(
+            onImportFromDevice = { imagePickerLauncher.launch("image/*") },
+            onImportFromLibrary = { 
+                // TODO: Implement library import
+                showImportDialog = false
+            },
+            onDismiss = { showImportDialog = false }
+        )
+    }
+}
+
+@Composable
+fun ToolBar(
+    currentTool: EditorTool,
+    onToolSelected: (EditorTool) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(EditorTool.values()) { tool ->
+            ToolButton(
+                tool = tool,
+                isSelected = currentTool == tool,
+                onClick = { onToolSelected(tool) }
+            )
         }
     }
 }
 
 @Composable
-fun AdvancedToolButton(
+fun ToolButton(
     tool: EditorTool,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val (icon, description) = when (tool) {
-        EditorTool.BRUSH -> Icons.Default.Brush to "Paint Brush"
-        EditorTool.ERASER -> Icons.Default.Clear to "Eraser"
-        EditorTool.COLOR_PICKER -> Icons.Default.ColorLens to "Color Picker"
-        EditorTool.FILL -> Icons.Default.FormatPaint to "Fill Tool"
-        EditorTool.SPRAY_PAINT -> Icons.Default.Grain to "Spray Paint"
-        EditorTool.PENCIL -> Icons.Default.Edit to "Pencil"
-    }
-    
-    Card(
+    Button(
+        onClick = onClick,
         modifier = Modifier
-            .size(56.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.surfaceVariant
+            .size(48.dp)
+            .clip(CircleShape),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant
         ),
-        shape = RoundedCornerShape(12.dp)
+        contentPadding = PaddingValues(0.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = description,
-                tint = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = description.take(4),
-                fontSize = 10.sp,
-                color = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        Icon(
+            imageVector = when (tool) {
+                EditorTool.BRUSH -> Icons.Default.Brush
+                EditorTool.ERASER -> Icons.Default.CleaningServices
+                EditorTool.COLOR_PICKER -> Icons.Default.Palette
+                EditorTool.FILL -> Icons.Default.FormatPaint
+                EditorTool.IMPORT -> Icons.Default.FileUpload
+                EditorTool.SAVE -> Icons.Default.Save
+                EditorTool.EXIT -> Icons.Default.ExitToApp
+            },
+            contentDescription = tool.name,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 
 @Composable
-fun BrushShapeButton(
-    shape: BrushShape,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val icon = when (shape) {
-        BrushShape.ROUND -> Icons.Default.Circle
-        BrushShape.SQUARE -> Icons.Default.Square
-        BrushShape.DIAMOND -> Icons.Default.Diamond
-        BrushShape.STAR -> Icons.Default.Star
-    }
-    
-    Card(
-        modifier = Modifier
-            .size(32.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.surfaceVariant
-        ),
-        shape = RoundedCornerShape(6.dp)
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = shape.name,
-                tint = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun EnhancedTextureCanvas(
-    texture: TextureItem,
+fun DrawingCanvas(
+    modifier: Modifier = Modifier,
     currentTool: EditorTool,
     brushSize: Float,
     brushShape: BrushShape,
     selectedColor: Color,
     opacity: Float,
-    onDrawingChanged: () -> Unit
+    strokePaths: List<StrokePath>,
+    currentPath: StrokePath?,
+    onStrokePathChanged: (StrokePath) -> Unit,
+    onStrokeComplete: (StrokePath) -> Unit
 ) {
-    var path by remember { mutableStateOf(Path()) }
-    var lastPoint by remember { mutableStateOf<Offset?>(null) }
-    var drawingPoints by remember { mutableStateOf(listOf<Offset>()) }
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.7f)
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(currentTool, brushSize, selectedColor) {
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                lastPoint = offset
-                                drawingPoints = listOf(offset)
-                                path.reset()
-                                path.moveTo(offset.x, offset.y)
-                            },
-                            onDrag = { change, _ ->
-                                change.consume()
-                                val newPoint = change.position
-                                drawingPoints = drawingPoints + newPoint
-                                
-                                lastPoint?.let { last ->
-                                    when (currentTool) {
-                                        EditorTool.BRUSH, EditorTool.PENCIL -> {
-                                            path.lineTo(newPoint.x, newPoint.y)
-                                        }
-                                        EditorTool.ERASER -> {
-                                            path.lineTo(newPoint.x, newPoint.y)
-                                        }
-                                        EditorTool.SPRAY_PAINT -> {
-                                            // For spray paint, create multiple small dots
-                                            repeat(5) {
-                                                val randomX = newPoint.x + (Math.random() - 0.5).toFloat() * brushSize
-                                                val randomY = newPoint.y + (Math.random() - 0.5).toFloat() * brushSize
-                                                path.addCircle(randomX, randomY, 2f, Path.Direction.CW)
-                                            }
-                                        }
-                                        else -> {}
-                                    }
+    Canvas(
+        modifier = modifier
+            .background(Color.White, RoundedCornerShape(8.dp))
+            .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        val newPath = StrokePath(
+                            path = Path().apply { moveTo(offset.x, offset.y) },
+                            color = selectedColor,
+                            strokeWidth = brushSize,
+                            shape = brushShape,
+                            opacity = opacity,
+                            isEraser = currentTool == EditorTool.ERASER
+                        )
+                        onStrokePathChanged(newPath)
+                    },
+                    onDrag = { change ->
+                        currentPath?.let { path ->
+                            val updatedPath = path.copy(
+                                path = Path(path.path).apply {
+                                    lineTo(change.position.x, change.position.y)
                                 }
-                                lastPoint = newPoint
-                                onDrawingChanged()
-                            },
-                            onDragEnd = {
-                                lastPoint = null
-                                drawingPoints = emptyList()
-                                
-                                // Handle fill tool
-                                if (currentTool == EditorTool.FILL) {
-                                    // TODO: Implement flood fill algorithm
-                                    onDrawingChanged()
-                                }
-                            }
-                        )
-                    }
-            ) {
-                // Draw checkerboard background for transparency
-                val checkerSize = 20f
-                val checkerColor1 = Color.White
-                val checkerColor2 = Color.LightGray
-                
-                for (x in 0 until (size.width / checkerSize).toInt() + 1) {
-                    for (y in 0 until (size.height / checkerSize).toInt() + 1) {
-                        val isEven = (x + y) % 2 == 0
-                        val color = if (isEven) checkerColor1 else checkerColor2
-                        drawRect(
-                            color = color,
-                            topLeft = Offset(x * checkerSize, y * checkerSize),
-                            size = androidx.compose.ui.geometry.Size(checkerSize, checkerSize)
-                        )
-                    }
-                }
-                
-                // Draw the texture background
-                // TODO: Load and draw actual texture bitmap
-                
-                // Draw the current path
-                when (currentTool) {
-                    EditorTool.BRUSH, EditorTool.PENCIL -> {
-                        drawPath(
-                            path = androidx.compose.ui.graphics.Path().apply {
-                                addPath(path.asComposePath())
-                            },
-                            color = selectedColor.copy(alpha = opacity),
-                            style = Stroke(
-                                width = brushSize,
-                                cap = StrokeCap.Round,
-                                join = StrokeJoin.Round
                             )
-                        )
-                    }
-                    EditorTool.ERASER -> {
-                        drawPath(
-                            path = androidx.compose.ui.graphics.Path().apply {
-                                addPath(path.asComposePath())
-                            },
-                            color = Color.Transparent,
-                            style = Stroke(
-                                width = brushSize,
-                                cap = StrokeCap.Round,
-                                join = StrokeJoin.Round
-                            ),
-                            blendMode = BlendMode.Clear
-                        )
-                    }
-                    EditorTool.SPRAY_PAINT -> {
-                        drawingPoints.forEach { point ->
-                            repeat(3) {
-                                val randomX = point.x + (Math.random() - 0.5).toFloat() * brushSize / 2
-                                val randomY = point.y + (Math.random() - 0.5).toFloat() * brushSize / 2
-                                drawCircle(
-                                    color = selectedColor.copy(alpha = opacity * 0.3f),
-                                    radius = 2f,
-                                    center = Offset(randomX, randomY)
-                                )
-                            }
+                            onStrokePathChanged(updatedPath)
+                        }
+                    },
+                    onDragEnd = {
+                        currentPath?.let { path ->
+                            onStrokeComplete(path)
                         }
                     }
-                    else -> {}
-                }
-                
-                // Draw brush preview
-                lastPoint?.let { point ->
-                    when (brushShape) {
-                        BrushShape.ROUND -> {
-                            drawCircle(
-                                color = selectedColor.copy(alpha = 0.3f),
-                                radius = brushSize / 2,
-                                center = point,
-                                style = Stroke(width = 2f)
-                            )
-                        }
-                        BrushShape.SQUARE -> {
-                            drawRect(
-                                color = selectedColor.copy(alpha = 0.3f),
-                                topLeft = Offset(point.x - brushSize / 2, point.y - brushSize / 2),
-                                size = androidx.compose.ui.geometry.Size(brushSize, brushSize),
-                                style = Stroke(width = 2f)
-                            )
-                        }
-                        BrushShape.DIAMOND -> {
-                            val path = androidx.compose.ui.graphics.Path().apply {
-                                moveTo(point.x, point.y - brushSize / 2)
-                                lineTo(point.x + brushSize / 2, point.y)
-                                lineTo(point.x, point.y + brushSize / 2)
-                                lineTo(point.x - brushSize / 2, point.y)
-                                close()
-                            }
-                            drawPath(
-                                path = path,
-                                color = selectedColor.copy(alpha = 0.3f),
-                                style = Stroke(width = 2f)
-                            )
-                        }
-                        BrushShape.STAR -> {
-                            // Simple star shape preview
-                            drawCircle(
-                                color = selectedColor.copy(alpha = 0.3f),
-                                radius = brushSize / 2,
-                                center = point,
-                                style = Stroke(width = 2f)
-                            )
-                        }
-                    }
-                }
+                )
             }
+    ) {
+        // Draw all completed paths
+        strokePaths.forEach { strokePath ->
+            drawPath(
+                path = strokePath.path,
+                color = strokePath.color.copy(alpha = strokePath.opacity),
+                style = Stroke(
+                    width = strokePath.strokeWidth,
+                    cap = when (strokePath.shape) {
+                        BrushShape.ROUND -> StrokeCap.Round
+                        BrushShape.SQUARE -> StrokeCap.Square
+                        else -> StrokeCap.Round
+                    }
+                )
+            )
+        }
+        
+        // Draw current path
+        currentPath?.let { strokePath ->
+            drawPath(
+                path = strokePath.path,
+                color = strokePath.color.copy(alpha = strokePath.opacity),
+                style = Stroke(
+                    width = strokePath.strokeWidth,
+                    cap = when (strokePath.shape) {
+                        BrushShape.ROUND -> StrokeCap.Round
+                        BrushShape.SQUARE -> StrokeCap.Square
+                        else -> StrokeCap.Round
+                    }
+                )
+            )
         }
     }
 }
 
 @Composable
-fun AdvancedColorPalette(
+fun PropertiesPanel(
+    brushSize: Float,
+    onBrushSizeChange: (Float) -> Unit,
+    brushShape: BrushShape,
+    onBrushShapeChange: (BrushShape) -> Unit,
+    opacity: Float,
+    onOpacityChange: (Float) -> Unit,
     selectedColor: Color,
     customColors: List<Color>,
     onColorSelected: (Color) -> Unit,
-    onAddCustomColor: (Color) -> Unit
+    onShowColorPicker: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val colors = listOf(
-        Color.Red, Color.Green, Color.Blue, Color.Yellow,
-        Color.Cyan, Color.Magenta, Color.Black, Color.White,
-        Color.Gray, Color.DarkGray, Color.LightGray,
-        Color(0xFFFF8C00), Color(0xFF9370DB), Color(0xFF20B2AA),
-        Color(0xFFDC143C), Color(0xFF228B22), Color(0xFF4B0082)
-    ) + customColors
-    
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -652,62 +433,87 @@ fun AdvancedColorPalette(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            // Brush Size
             Text(
-                text = "Color Palette",
+                text = "Brush Size: ${brushSize.toInt()}",
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                fontWeight = FontWeight.Medium
+            )
+            Slider(
+                value = brushSize,
+                onValueChange = onBrushSizeChange,
+                valueRange = 1f..50f,
+                colors = SliderDefaults.colors(
+                    thumbColor = Color(0xFFFFB6C1),
+                    activeTrackColor = Color(0xFFFFB6C1)
+                )
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Opacity
+            Text(
+                text = "Opacity: ${(opacity * 100).toInt()}%",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Slider(
+                value = opacity,
+                onValueChange = onOpacityChange,
+                valueRange = 0.1f..1f,
+                colors = SliderDefaults.colors(
+                    thumbColor = Color(0xFFFFB6C1),
+                    activeTrackColor = Color(0xFFFFB6C1)
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Color Palette
+            Text(
+                text = "Colors",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
             
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp)
             ) {
-                items(colors) { color ->
+                // Default colors
+                items(defaultColors) { color ->
                     ColorButton(
                         color = color,
                         isSelected = selectedColor == color,
                         onClick = { onColorSelected(color) }
                     )
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Add Custom Color",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
-                )
                 
-                Button(
-                    onClick = {
-                        val newColor = Color(
-                            (Math.random() * 255).toInt(),
-                            (Math.random() * 255).toInt(),
-                            (Math.random() * 255).toInt()
-                        )
-                        onAddCustomColor(newColor)
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFB6C1),
-                        contentColor = Color.Black
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Custom Color",
-                        modifier = Modifier.size(16.dp)
+                // Custom colors
+                items(customColors) { color ->
+                    ColorButton(
+                        color = color,
+                        isSelected = selectedColor == color,
+                        onClick = { onColorSelected(color) }
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Random")
+                }
+                
+                // Color picker button
+                item {
+                    Button(
+                        onClick = onShowColorPicker,
+                        modifier = Modifier.size(40.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.outline
+                        ),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Color",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
@@ -726,7 +532,7 @@ fun ColorButton(
             .background(color, CircleShape)
             .border(
                 width = if (isSelected) 3.dp else 1.dp,
-                color = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.outline,
+                color = if (isSelected) Color.Black else Color.Gray,
                 shape = CircleShape
             )
             .clickable { onClick() }
@@ -734,89 +540,341 @@ fun ColorButton(
 }
 
 @Composable
-fun AdvancedColorPickerDialog(
-    selectedColor: Color,
+fun ColorPickerDialog(
+    currentColor: Color,
     onColorSelected: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var red by remember { mutableStateOf(selectedColor.red) }
-    var green by remember { mutableStateOf(selectedColor.green) }
-    var blue by remember { mutableStateOf(selectedColor.blue) }
-    var alpha by remember { mutableStateOf(selectedColor.alpha) }
-    
-    val currentColor = Color(red, green, blue, alpha)
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Advanced Color Picker") },
-        text = {
-            Column {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Select Color",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
                 // Color preview
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp)
+                        .height(60.dp)
                         .background(currentColor, RoundedCornerShape(8.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // RGB Sliders
-                Text("Red: ${(red * 255).toInt()}")
-                Slider(
-                    value = red,
-                    onValueChange = { red = it },
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.Red,
-                        activeTrackColor = Color.Red
-                    )
-                )
-                
-                Text("Green: ${(green * 255).toInt()}")
-                Slider(
-                    value = green,
-                    onValueChange = { green = it },
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.Green,
-                        activeTrackColor = Color.Green
-                    )
-                )
-                
-                Text("Blue: ${(blue * 255).toInt()}")
-                Slider(
-                    value = blue,
-                    onValueChange = { blue = it },
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.Blue,
-                        activeTrackColor = Color.Blue
-                    )
-                )
-                
-                Text("Alpha: ${(alpha * 255).toInt()}")
-                Slider(
-                    value = alpha,
-                    onValueChange = { alpha = it },
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.Gray,
-                        activeTrackColor = Color.Gray
-                    )
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onColorSelected(currentColor)
+                // RGB Sliders would go here in a real implementation
+                // For now, we'll show a grid of colors
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(extendedColors) { color ->
+                        ColorButton(
+                            color = color,
+                            isSelected = currentColor == color,
+                            onClick = { onColorSelected(color) }
+                        )
+                    }
                 }
-            ) {
-                Text("Apply")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        onClick = { onColorSelected(currentColor) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFB6C1)
+                        )
+                    ) {
+                        Text("Select", color = Color.Black)
+                    }
+                }
             }
         }
-    )
+    }
 }
+
+@Composable
+fun SaveDialog(
+    textureName: String,
+    textureCategory: TextureCategory,
+    onSave: (TextureCategory, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedCategory by remember { mutableStateOf(textureCategory) }
+    var fileName by remember { mutableStateOf(textureName.removeSuffix(".png")) }
+    
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Save Texture",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                // Category selection
+                Text(
+                    text = "Category",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
+                    items(TextureCategory.values()) { category ->
+                        FilterChip(
+                            selected = selectedCategory == category,
+                            onClick = { selectedCategory = category },
+                            label = { Text(category.displayName) }
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // File name input
+                OutlinedTextField(
+                    value = fileName,
+                    onValueChange = { fileName = it },
+                    label = { Text("File Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "Will save to: textures/${selectedCategory.name.lowercase()}/$fileName.png",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        onClick = { onSave(selectedCategory, fileName) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFB6C1)
+                        )
+                    ) {
+                        Text("Save", color = Color.Black)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExitDialog(
+    onSave: () -> Unit,
+    onExit: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Unsaved Changes",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "You have unsaved changes. What would you like to do?",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        onClick = onExit,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Exit without saving")
+                    }
+                    
+                    Button(
+                        onClick = onSave,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFB6C1)
+                        )
+                    ) {
+                        Text("Save & Exit", color = Color.Black)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ImportDialog(
+    onImportFromDevice: () -> Unit,
+    onImportFromLibrary: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Import Image",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                Button(
+                    onClick = onImportFromDevice,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFB6C1)
+                    )
+                ) {
+                    Icon(Icons.Default.PhoneAndroid, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Import from Device", color = Color.Black)
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                OutlinedButton(
+                    onClick = onImportFromLibrary,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Import from Library")
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel")
+                }
+            }
+        }
+    }
+}
+
+// Data classes and utility functions
+data class StrokePath(
+    val path: Path,
+    val color: Color,
+    val strokeWidth: Float,
+    val shape: BrushShape,
+    val opacity: Float,
+    val isEraser: Boolean = false
+)
+
+private fun createBitmapFromCanvas(
+    strokePaths: List<StrokePath>,
+    canvasSize: androidx.compose.ui.unit.Dp,
+    density: androidx.compose.ui.unit.Density
+): Bitmap {
+    val sizeInPx = with(density) { canvasSize.toPx() }.toInt()
+    val bitmap = Bitmap.createBitmap(sizeInPx, sizeInPx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    
+    // Fill with white background
+    canvas.drawColor(android.graphics.Color.WHITE)
+    
+    // Draw all paths
+    strokePaths.forEach { strokePath ->
+        val paint = Paint().apply {
+            color = strokePath.color.toArgb()
+            strokeWidth = strokePath.strokeWidth
+            style = Paint.Style.STROKE
+            isAntiAlias = true
+            alpha = (strokePath.opacity * 255).toInt()
+            
+            if (strokePath.isEraser) {
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+            }
+        }
+        
+        canvas.drawPath(strokePath.path, paint)
+    }
+    
+    return bitmap
+}
+
+private val defaultColors = listOf(
+    Color.Red, Color.Blue, Color.Green, Color.Yellow,
+    Color.Cyan, Color.Magenta, Color.Gray, Color.Black
+)
+
+private val extendedColors = listOf(
+    Color.Red, Color(0xFFFF6B6B), Color(0xFFFF8E8E), Color(0xFFFFB3B3),
+    Color.Blue, Color(0xFF4ECDC4), Color(0xFF45B7D1), Color(0xFF96CEB4),
+    Color.Green, Color(0xFF6BCF7F), Color(0xFF4DD0E1), Color(0xFF81C784),
+    Color.Yellow, Color(0xFFFD79A8), Color(0xFFFFD93D), Color(0xFFFAB1A0),
+    Color.Cyan, Color.Magenta, Color.Gray, Color.Black, Color.White
+)

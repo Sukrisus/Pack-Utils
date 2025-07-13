@@ -2,6 +2,7 @@ package com.packify.packaverse.viewmodel
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -16,6 +17,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 class TexturePackViewModel(application: Application) : AndroidViewModel(application) {
     
@@ -70,6 +74,43 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
                 _currentPackId.value = packId
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to load textures: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    fun saveTextureToPath(packId: String, path: String, bitmap: Bitmap) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            try {
+                val pack = getTexturePackById(packId)
+                if (pack != null) {
+                    val packDir = File(getApplication<Application>().filesDir, "texture_packs/${pack.id}")
+                    val textureFile = File(packDir, path)
+                    
+                    // Create directories if they don't exist
+                    textureFile.parentFile?.mkdirs()
+                    
+                    // Save the bitmap
+                    FileOutputStream(textureFile).use { out ->
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    }
+                    
+                    _successMessage.value = "Texture saved successfully!"
+                    _hasUnsavedChanges.value = true
+                    
+                    // Auto-save if enabled
+                    if (isAutoSaveEnabled()) {
+                        autoSaveCurrentProject()
+                    }
+                } else {
+                    _errorMessage.value = "Texture pack not found"
+                }
+            } catch (e: IOException) {
+                _errorMessage.value = "Failed to save texture: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
