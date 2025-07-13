@@ -121,8 +121,7 @@ fun ActionButton(
             containerColor = Color(0xFFFFB6C1), // Light pink color
             contentColor = Color.Black
         ),
-        shape = RoundedCornerShape(28.dp),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+        shape = RoundedCornerShape(28.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
