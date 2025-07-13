@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.ui.screens
+package com.packify.packaverse.ui.screens
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,8 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mcpe.texturepackmaker.data.TexturePack
-import com.mcpe.texturepackmaker.viewmodel.TexturePackViewModel
+import com.packify.packaverse.data.TexturePack
+import com.packify.packaverse.viewmodel.TexturePackViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

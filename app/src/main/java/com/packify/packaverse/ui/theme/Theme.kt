@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.ui.theme
+package com.packify.packaverse.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -60,11 +60,14 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun MCPETexturePackMakerTheme(
+fun PackifyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
+    val themeManager = rememberThemeManager()
+    val isDarkMode by themeManager.isDarkMode.collectAsState()
+    
+    val colorScheme = if (isDarkMode) {
         DarkColorScheme
     } else {
         LightColorScheme

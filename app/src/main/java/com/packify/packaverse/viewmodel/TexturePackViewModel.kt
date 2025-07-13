@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.viewmodel
+package com.packify.packaverse.viewmodel
 
 import android.app.Application
 import android.net.Uri
@@ -6,10 +6,10 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.mcpe.texturepackmaker.data.TexturePack
-import com.mcpe.texturepackmaker.data.TextureItem
-import com.mcpe.texturepackmaker.data.TextureCategory
-import com.mcpe.texturepackmaker.repository.TexturePackRepository
+import com.packify.packaverse.data.TexturePack
+import com.packify.packaverse.data.TextureItem
+import com.packify.packaverse.data.TextureCategory
+import com.packify.packaverse.repository.TexturePackRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -82,6 +82,25 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
                 }
                 .onFailure { 
                     _errorMessage.value = "Failed to replace texture: ${it.message}"
+                }
+            
+            _isLoading.value = false
+        }
+    }
+    
+    fun addTexture(packId: String, category: TextureCategory, textureUri: Uri) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            repository.addTexture(packId, category, textureUri)
+                .onSuccess { 
+                    _successMessage.value = "Texture added successfully!"
+                    // Reload textures for the current category
+                    loadTextures(packId, category)
+                }
+                .onFailure { 
+                    _errorMessage.value = "Failed to add texture: ${it.message}"
                 }
             
             _isLoading.value = false
@@ -190,6 +209,10 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
     
     fun getTexturePackById(packId: String): TexturePack? {
         return _texturePacks.value.find { it.id == packId }
+    }
+    
+    fun getTextureByName(packId: String, textureName: String): TextureItem? {
+        return _textures.value.find { it.name == textureName }
     }
     
     fun clearMessages() {

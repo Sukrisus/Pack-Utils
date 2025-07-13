@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.ui.theme
+package com.packify.packaverse.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

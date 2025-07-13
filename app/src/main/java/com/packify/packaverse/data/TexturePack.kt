@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.data
+package com.packify.packaverse.data
 
 import com.google.gson.annotations.SerializedName
 import java.util.UUID
@@ -40,15 +40,16 @@ data class TextureItem(
     val name: String,
     val originalPath: String,
     val mcpePath: String,
-    val category: TextureCategory
+    val category: TextureCategory,
+    val isCustom: Boolean = false
 )
 
-enum class TextureCategory(val displayName: String, val mcpePath: String) {
-    BLOCKS("Blocks", "textures/blocks/"),
-    ITEMS("Items", "textures/items/"),
-    ENTITY("Entity", "textures/entity/"),
-    ENVIRONMENT("Environment", "textures/environment/"),
-    GUI("GUI", "textures/gui/"),
-    PARTICLE("Particle", "textures/particle/"),
-    MISC("Misc", "textures/misc/")
+enum class TextureCategory(val displayName: String, val mcpePath: String, val assetPath: String) {
+    BLOCKS("Blocks", "textures/blocks/", "blocks"),
+    ITEMS("Items", "textures/items/", "items"),
+    ENTITY("Entity", "textures/entity/", "entity"),
+    ENVIRONMENT("Environment", "textures/environment/", "environment"),
+    GUI("GUI", "textures/gui/", "gui"),
+    PARTICLE("Particle", "textures/particle/", "particle"),
+    MISC("Misc", "textures/misc/", "misc")
 }

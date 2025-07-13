@@ -1,4 +1,4 @@
-package com.mcpe.texturepackmaker.ui.screens
+package com.packify.packaverse.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mcpe.texturepackmaker.ui.components.BottomNavigationBar
+import com.packify.packaverse.ui.components.BottomNavigationBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
