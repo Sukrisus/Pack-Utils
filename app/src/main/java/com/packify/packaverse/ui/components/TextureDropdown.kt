@@ -93,6 +93,14 @@ fun TextureDropdown(
                 
                 Spacer(modifier = Modifier.weight(1f))
                 
+                Text(
+                    text = "${textures.size} textures",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = null,
@@ -104,29 +112,43 @@ fun TextureDropdown(
             if (isExpanded) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Add New Texture Button
-                Button(
-                    onClick = { imagePickerLauncher.launch("image/*") },
+                // Square Plus Icon at Top (as specified in requirements)
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFB6C1),
-                        contentColor = Color.Black
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                    horizontalArrangement = Arrangement.Start
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add New Texture")
+                    Card(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clickable { imagePickerLauncher.launch("image/*") },
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFB6C1).copy(alpha = 0.3f)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add new texture",
+                                tint = Color(0xFFFFB6C1),
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Texture Grid
+                // Texture Grid - 4 squares per row as required
                 if (textures.isNotEmpty()) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(4),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.heightIn(max = 300.dp) // Limit height for better UX
                     ) {
                         items(textures) { texture ->
                             TextureGridItem(
@@ -136,12 +158,39 @@ fun TextureDropdown(
                         }
                     }
                 } else {
-                    Text(
-                        text = "No textures in this category. Add some texture files to get started.",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PhotoLibrary,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No textures in this category",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "Click the + button above to add textures",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -167,7 +216,12 @@ fun TextureGridItem(
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
-                model = texture.originalPath,
+                model = if (texture.originalPath.startsWith("asset://")) {
+                    // Handle asset paths
+                    texture.originalPath.removePrefix("asset://")
+                } else {
+                    texture.originalPath
+                },
                 contentDescription = texture.name,
                 modifier = Modifier
                     .fillMaxSize()
@@ -175,6 +229,27 @@ fun TextureGridItem(
                     .clip(RoundedCornerShape(4.dp)),
                 contentScale = ContentScale.Fit
             )
+            
+            // Overlay for custom textures
+            if (texture.isCustom) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Color.Black.copy(alpha = 0.3f),
+                            RoundedCornerShape(8.dp)
+                        )
+                )
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Custom texture",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .size(16.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(2.dp)
+                )
+            }
         }
     }
 }

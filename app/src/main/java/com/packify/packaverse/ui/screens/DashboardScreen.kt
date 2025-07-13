@@ -1,5 +1,6 @@
 package com.packify.packaverse.ui.screens
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,11 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.packify.packaverse.data.TextureCategory
 import com.packify.packaverse.data.TextureItem
+import com.packify.packaverse.data.TexturePack
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import com.packify.packaverse.ui.components.BottomNavigationBar
 import com.packify.packaverse.ui.components.TextureDropdown
@@ -36,6 +39,20 @@ fun DashboardScreen(
     val isLoading by viewModel.isLoading
     val errorMessage by viewModel.errorMessage
     val successMessage by viewModel.successMessage
+    val context = LocalContext.current
+    
+    var selectedPackId by remember { mutableStateOf<String?>(null) }
+    var showShareDialog by remember { mutableStateOf(false) }
+    
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri: Uri? ->
+        uri?.let { exportUri ->
+            selectedPackId?.let { packId ->
+                viewModel.exportTexturePack(packId, exportUri)
+            }
+        }
+    }
     
     LaunchedEffect(Unit) {
         viewModel.loadTexturePacks()
@@ -57,6 +74,9 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showShareDialog = true }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share")
+                    }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
@@ -97,12 +117,120 @@ fun DashboardScreen(
                 viewModel = viewModel,
                 errorMessage = errorMessage,
                 successMessage = successMessage,
+                onTextureSelected = { texture ->
+                    selectedPackId?.let { packId ->
+                        onNavigateToTextureEditor(packId, texture.name)
+                    }
+                },
+                onPackSelected = { packId ->
+                    selectedPackId = packId
+                },
+                onExportPack = { packId ->
+                    selectedPackId = packId
+                    exportLauncher.launch("${texturePacks.find { it.id == packId }?.name ?: "texture_pack"}.zip")
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
             )
         }
+        
+        // Share Dialog
+        if (showShareDialog) {
+            ShareDialog(
+                texturePacks = texturePacks,
+                onDismiss = { showShareDialog = false },
+                onSharePack = { packId ->
+                    selectedPackId = packId
+                    exportLauncher.launch("${texturePacks.find { it.id == packId }?.name ?: "texture_pack"}.zip")
+                    showShareDialog = false
+                },
+                onShareApp = {
+                    val shareIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "Check out Packify - MCPE Texture Pack Editor! Create amazing texture packs for Minecraft PE!")
+                        putExtra(Intent.EXTRA_SUBJECT, "Packify - MCPE Texture Pack Editor")
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                    showShareDialog = false
+                }
+            )
+        }
+        
+        // Error/Success Messages
+        errorMessage?.let { message ->
+            LaunchedEffect(message) {
+                viewModel.clearMessages()
+            }
+        }
+        
+        successMessage?.let { message ->
+            LaunchedEffect(message) {
+                viewModel.clearMessages()
+            }
+        }
     }
+}
+
+@Composable
+fun ShareDialog(
+    texturePacks: List<TexturePack>,
+    onDismiss: () -> Unit,
+    onSharePack: (String) -> Unit,
+    onShareApp: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Share") },
+        text = {
+            Column {
+                Text("What would you like to share?")
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = onShareApp,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFB6C1),
+                        contentColor = Color.Black
+                    )
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Share App")
+                }
+                
+                if (texturePacks.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text("Or share a texture pack:")
+                    
+                    texturePacks.forEach { pack ->
+                        Button(
+                            onClick = { onSharePack(pack.id) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        ) {
+                            Icon(Icons.Default.Archive, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(pack.name)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -141,129 +269,150 @@ fun EmptyStateView(modifier: Modifier = Modifier) {
 
 @Composable
 fun TextureEditorContent(
-    texturePacks: List<com.mcpe.texturepackmaker.data.TexturePack>,
+    texturePacks: List<TexturePack>,
     textures: List<TextureItem>,
     viewModel: TexturePackViewModel,
     errorMessage: String?,
     successMessage: String?,
+    onTextureSelected: (TextureItem) -> Unit,
+    onPackSelected: (String) -> Unit,
+    onExportPack: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedPack by remember { mutableStateOf<com.mcpe.texturepackmaker.data.TexturePack?>(null) }
-    var selectedCategory by remember { mutableStateOf<TextureCategory?>(null) }
-    
-    Column(modifier = modifier) {
-        // Messages
-        errorMessage?.let { error ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = error,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onErrorContainer
-                )
-            }
-        }
-        
-        successMessage?.let { success ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
-                Text(
-                    text = success,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-        
-        // Pack selector
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
+    LazyColumn(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Pack Selection
+        item {
+            PackSelectionCard(
+                texturePacks = texturePacks,
+                onPackSelected = onPackSelected,
+                onExportPack = onExportPack
             )
+        }
+        
+        // Texture Categories
+        items(TextureCategory.values()) { category ->
+            TextureDropdown(
+                category = category,
+                textures = textures.filter { it.category == category },
+                viewModel = viewModel,
+                packId = texturePacks.firstOrNull()?.id ?: "",
+                onTextureSelected = onTextureSelected
+            )
+        }
+    }
+}
+
+@Composable
+fun PackSelectionCard(
+    texturePacks: List<TexturePack>,
+    onPackSelected: (String) -> Unit,
+    onExportPack: (String) -> Unit
+) {
+    var selectedPack by remember { mutableStateOf(texturePacks.firstOrNull()) }
+    var showPackDialog by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Select Texture Pack",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "Current Pack: ${selectedPack?.name ?: "None"}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
                 )
                 
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                if (texturePacks.isNotEmpty()) {
-                    selectedPack = selectedPack ?: texturePacks.first()
+                Row {
+                    IconButton(onClick = { showPackDialog = true }) {
+                        Icon(Icons.Default.SwapHoriz, contentDescription = "Switch Pack")
+                    }
                     
-                    texturePacks.forEach { pack ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = selectedPack?.id == pack.id,
-                                onClick = { 
-                                    selectedPack = pack
-                                    selectedCategory = null
-                                    viewModel.clearMessages()
-                                },
-                                colors = RadioButtonDefaults.colors(
-                                    selectedColor = Color(0xFFFFB6C1)
-                                )
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = pack.name,
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                    selectedPack?.let { pack ->
+                        IconButton(onClick = { onExportPack(pack.id) }) {
+                            Icon(Icons.Default.FileDownload, contentDescription = "Export Pack")
                         }
                     }
                 }
             }
-        }
-        
-        // Category dropdowns
-        if (selectedPack != null) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                items(TextureCategory.values()) { category ->
-                    val categoryTextures = textures.filter { it.category == category }
-                    TextureDropdown(
-                        category = category,
-                        textures = categoryTextures,
-                        viewModel = viewModel,
-                        packId = selectedPack!!.id,
-                        onTextureSelected = { texture ->
-                            onNavigateToTextureEditor(selectedPack!!.id, texture.name)
-                        }
-                    )
-                }
+            
+            selectedPack?.let { pack ->
+                Text(
+                    text = pack.description,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
-        
-
+    }
+    
+    if (showPackDialog) {
+        AlertDialog(
+            onDismissRequest = { showPackDialog = false },
+            title = { Text("Select Texture Pack") },
+            text = {
+                LazyColumn {
+                    items(texturePacks) { pack ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (selectedPack?.id == pack.id) 
+                                    Color(0xFFFFB6C1).copy(alpha = 0.3f) 
+                                else 
+                                    MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    text = pack.name,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = pack.description,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedPack?.let { pack ->
+                            onPackSelected(pack.id)
+                        }
+                        showPackDialog = false
+                    }
+                ) {
+                    Text("Select")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPackDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

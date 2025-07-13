@@ -1,6 +1,7 @@
 package com.packify.packaverse.viewmodel
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -14,10 +15,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 class TexturePackViewModel(application: Application) : AndroidViewModel(application) {
     
     private val repository = TexturePackRepository(application.applicationContext)
+    private val sharedPreferences = application.getSharedPreferences("packify_settings", Context.MODE_PRIVATE)
     
     private val _texturePacks = MutableStateFlow<List<TexturePack>>(emptyList())
     val texturePacks: StateFlow<List<TexturePack>> = _texturePacks.asStateFlow()
@@ -33,6 +36,12 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
     
     private val _textures = MutableStateFlow<List<TextureItem>>(emptyList())
     val textures: StateFlow<List<TextureItem>> = _textures.asStateFlow()
+    
+    private val _currentPackId = mutableStateOf<String?>(null)
+    val currentPackId: State<String?> = _currentPackId
+    
+    private val _hasUnsavedChanges = mutableStateOf(false)
+    val hasUnsavedChanges: State<Boolean> = _hasUnsavedChanges
     
     init {
         loadTexturePacks()
@@ -58,6 +67,7 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             try {
                 val textures = repository.getTextures(packId, category)
                 _textures.value = textures
+                _currentPackId.value = packId
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to load textures: ${e.message}"
             } finally {
@@ -74,6 +84,13 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             repository.replaceTexture(packId, texturePath, newTextureUri)
                 .onSuccess { 
                     _successMessage.value = "Texture replaced successfully!"
+                    _hasUnsavedChanges.value = true
+                    
+                    // Auto-save if enabled
+                    if (isAutoSaveEnabled()) {
+                        autoSaveCurrentProject()
+                    }
+                    
                     // Reload textures for the current category
                     val currentTextures = _textures.value
                     if (currentTextures.isNotEmpty()) {
@@ -96,6 +113,13 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             repository.addTexture(packId, category, textureUri)
                 .onSuccess { 
                     _successMessage.value = "Texture added successfully!"
+                    _hasUnsavedChanges.value = true
+                    
+                    // Auto-save if enabled
+                    if (isAutoSaveEnabled()) {
+                        autoSaveCurrentProject()
+                    }
+                    
                     // Reload textures for the current category
                     loadTextures(packId, category)
                 }
@@ -139,6 +163,13 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             repository.updatePackIcon(packId, iconUri)
                 .onSuccess { 
                     _successMessage.value = "Pack icon updated successfully!"
+                    _hasUnsavedChanges.value = true
+                    
+                    // Auto-save if enabled
+                    if (isAutoSaveEnabled()) {
+                        autoSaveCurrentProject()
+                    }
+                    
                     loadTexturePacks()
                 }
                 .onFailure { 
@@ -162,6 +193,13 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             repository.updateManifest(packId, name, description, version, minEngineVersion)
                 .onSuccess { 
                     _successMessage.value = "Pack details updated successfully!"
+                    _hasUnsavedChanges.value = true
+                    
+                    // Auto-save if enabled
+                    if (isAutoSaveEnabled()) {
+                        autoSaveCurrentProject()
+                    }
+                    
                     loadTexturePacks()
                 }
                 .onFailure { 
@@ -205,6 +243,74 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
             
             _isLoading.value = false
         }
+    }
+    
+    fun resetToDefault(packId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            repository.resetToDefault(packId)
+                .onSuccess { 
+                    _successMessage.value = "Pack reset to default textures successfully!"
+                    _hasUnsavedChanges.value = false
+                    loadTexturePacks()
+                    
+                    // Reload current textures if viewing this pack
+                    if (_currentPackId.value == packId) {
+                        val currentTextures = _textures.value
+                        if (currentTextures.isNotEmpty()) {
+                            loadTextures(packId, currentTextures.first().category)
+                        }
+                    }
+                }
+                .onFailure { 
+                    _errorMessage.value = "Failed to reset pack: ${it.message}"
+                }
+            
+            _isLoading.value = false
+        }
+    }
+    
+    fun saveCurrentProject() {
+        _currentPackId.value?.let { packId ->
+            viewModelScope.launch {
+                _isLoading.value = true
+                _errorMessage.value = null
+                
+                repository.saveProject(packId)
+                    .onSuccess { 
+                        _successMessage.value = "Project saved successfully!"
+                        _hasUnsavedChanges.value = false
+                    }
+                    .onFailure { 
+                        _errorMessage.value = "Failed to save project: ${it.message}"
+                    }
+                
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    private fun autoSaveCurrentProject() {
+        _currentPackId.value?.let { packId ->
+            viewModelScope.launch {
+                // Add small delay to avoid too frequent saves
+                delay(2000)
+                
+                repository.saveProject(packId)
+                    .onSuccess { 
+                        _hasUnsavedChanges.value = false
+                    }
+                    .onFailure { 
+                        // Silent failure for auto-save
+                    }
+            }
+        }
+    }
+    
+    private fun isAutoSaveEnabled(): Boolean {
+        return sharedPreferences.getBoolean("auto_save", true)
     }
     
     fun getTexturePackById(packId: String): TexturePack? {

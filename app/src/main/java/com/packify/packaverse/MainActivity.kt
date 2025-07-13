@@ -109,7 +109,8 @@ fun PackifyApp() {
                 },
                 onNavigateToDashboard = { 
                     navController.popBackStack("dashboard", false)
-                }
+                },
+                viewModel = viewModel
             )
         }
         

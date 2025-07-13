@@ -16,21 +16,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.packify.packaverse.ui.components.BottomNavigationBar
 import com.packify.packaverse.ui.theme.rememberThemeManager
+import androidx.compose.runtime.LaunchedEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToHome: () -> Unit = {},
-    onNavigateToDashboard: () -> Unit = {}
+    onNavigateToDashboard: () -> Unit = {},
+    viewModel: com.packify.packaverse.viewmodel.TexturePackViewModel? = null
 ) {
     val themeManager = rememberThemeManager()
     val isDarkMode by themeManager.isDarkMode.collectAsState()
     val context = LocalContext.current
     
-    var autoSave by remember { mutableStateOf(true) }
-    var highQualityExport by remember { mutableStateOf(true) }
+    // Use SharedPreferences for persistent storage
+    val sharedPreferences = context.getSharedPreferences("packify_settings", android.content.Context.MODE_PRIVATE)
+    
+    var autoSave by remember { mutableStateOf(sharedPreferences.getBoolean("auto_save", true)) }
+    var highQualityExport by remember { mutableStateOf(sharedPreferences.getBoolean("high_quality_export", true)) }
     var showResetDialog by remember { mutableStateOf(false) }
+    
+    // Get current texture packs for reset functionality
+    val texturePacks by viewModel?.texturePacks?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
+    
+    // Save settings when they change
+    LaunchedEffect(autoSave) {
+        sharedPreferences.edit().putBoolean("auto_save", autoSave).apply()
+    }
+    
+    LaunchedEffect(highQualityExport) {
+        sharedPreferences.edit().putBoolean("high_quality_export", highQualityExport).apply()
+    }
     
     Scaffold(
         topBar = {
@@ -83,10 +100,10 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Export Settings Section
+            // Project Settings Section
             SettingsSection(
-                title = "Export Settings",
-                icon = Icons.Default.FileDownload
+                title = "Project Settings",
+                icon = Icons.Default.Settings
             ) {
                 SettingsSwitch(
                     title = "Auto Save",
@@ -141,8 +158,8 @@ fun SettingsScreen(
                 onClick = { showResetDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFB6C1),
-                    contentColor = Color.Black
+                    containerColor = Color(0xFFFF6B6B),
+                    contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -159,7 +176,7 @@ fun SettingsScreen(
                     val shareIntent = Intent().apply {
                         action = Intent.ACTION_SEND
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, "Check out Packify - MCPE Texture Pack Editor! Download it now.")
+                        putExtra(Intent.EXTRA_TEXT, "Check out Packify - MCPE Texture Pack Editor! Create amazing texture packs for Minecraft PE!")
                         putExtra(Intent.EXTRA_SUBJECT, "Packify - MCPE Texture Pack Editor")
                     }
                     context.startActivity(Intent.createChooser(shareIntent, "Share via"))
@@ -182,7 +199,15 @@ fun SettingsScreen(
             AlertDialog(
                 onDismissRequest = { showResetDialog = false },
                 title = { Text("Reset to Defaults") },
-                text = { Text("Are you sure you want to reset all settings to their default values?") },
+                text = { 
+                    Column {
+                        Text("Are you sure you want to reset all settings to their default values?")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("This will also reset all texture packs to their base textures.", 
+                             fontSize = 14.sp, 
+                             color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -190,6 +215,15 @@ fun SettingsScreen(
                             themeManager.setTheme(true)
                             autoSave = true
                             highQualityExport = true
+                            sharedPreferences.edit().clear().apply()
+                            
+                            // Reset all texture packs to default
+                            viewModel?.let { vm ->
+                                texturePacks.forEach { pack ->
+                                    vm.resetToDefault(pack.id)
+                                }
+                            }
+                            
                             showResetDialog = false
                         }
                     ) {
@@ -202,7 +236,6 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
         }
     }
 }

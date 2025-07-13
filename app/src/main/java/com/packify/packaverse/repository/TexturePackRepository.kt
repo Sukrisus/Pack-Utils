@@ -261,6 +261,89 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
+    suspend fun resetToDefault(packId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val packDir = File(texturePacksDir, packId)
+            
+            // Delete all texture files but keep manifest and metadata
+            val manifestFile = File(packDir, "manifest.json")
+            val metadataFile = File(packDir, "metadata.json")
+            val iconFile = File(packDir, "pack_icon.png")
+            
+            // Save important files temporarily
+            val manifest = if (manifestFile.exists()) manifestFile.readText() else null
+            val metadata = if (metadataFile.exists()) metadataFile.readText() else null
+            val iconExists = iconFile.exists()
+            val iconData = if (iconExists) iconFile.readBytes() else null
+            
+            // Clear all texture directories
+            TextureCategory.values().forEach { category ->
+                val categoryDir = File(packDir, category.mcpePath)
+                if (categoryDir.exists()) {
+                    categoryDir.deleteRecursively()
+                }
+                categoryDir.mkdirs()
+            }
+            
+            // Restore important files
+            manifest?.let { manifestFile.writeText(it) }
+            metadata?.let { metadataFile.writeText(it) }
+            iconData?.let { iconFile.writeBytes(it) }
+            
+            // Update modification time
+            val texturePack = getTexturePackById(packId)
+            texturePack?.let {
+                saveTexturePackMetadata(it.copy(modifiedAt = System.currentTimeMillis()))
+            }
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun saveProject(packId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val packDir = File(texturePacksDir, packId)
+            
+            // Create backup directory
+            val backupDir = File(packDir, "backup")
+            backupDir.mkdirs()
+            
+            // Create timestamp for backup
+            val timestamp = System.currentTimeMillis()
+            val backupFile = File(backupDir, "backup_$timestamp.zip")
+            
+            // Create backup zip
+            FileOutputStream(backupFile).use { outputStream ->
+                ZipOutputStream(outputStream).use { zipOut ->
+                    TextureCategory.values().forEach { category ->
+                        val categoryDir = File(packDir, category.mcpePath)
+                        if (categoryDir.exists()) {
+                            addFolderToZip(categoryDir, category.mcpePath, zipOut)
+                        }
+                    }
+                }
+            }
+            
+            // Update modification time
+            val texturePack = getTexturePackById(packId)
+            texturePack?.let {
+                saveTexturePackMetadata(it.copy(modifiedAt = System.currentTimeMillis()))
+            }
+            
+            // Clean up old backups (keep only last 5)
+            val backupFiles = backupDir.listFiles()?.sortedByDescending { it.lastModified() }
+            if (backupFiles != null && backupFiles.size > 5) {
+                backupFiles.drop(5).forEach { it.delete() }
+            }
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
     private fun addFolderToZip(folder: File, parentPath: String, zipOut: ZipOutputStream) {
         folder.listFiles()?.forEach { file ->
             if (file.isDirectory) {
