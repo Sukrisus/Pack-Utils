@@ -92,7 +92,7 @@ fun SettingsScreen(
                 SettingsSwitch(
                     title = "Dark Mode",
                     subtitle = "Use dark theme for the app",
-                    icon = Icons.Default.DarkMode,
+                    icon = if (isDarkMode) Icons.Default.Brightness3 else Icons.Default.Brightness7,
                     checked = isDarkMode,
                     onCheckedChange = { themeManager.toggleTheme() }
                 )
