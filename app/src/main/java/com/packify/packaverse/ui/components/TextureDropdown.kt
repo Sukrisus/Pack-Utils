@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -209,7 +210,7 @@ fun TextureGridItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = RoundedCornerShape(8.dp)
+        shape = CircleShape
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -226,8 +227,9 @@ fun TextureGridItem(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(4.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                contentScale = ContentScale.Fit
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop,
+                filterQuality = androidx.compose.ui.graphics.FilterQuality.None // Pixelated effect
             )
             
             // Overlay for custom textures
@@ -237,7 +239,7 @@ fun TextureGridItem(
                         .fillMaxSize()
                         .background(
                             Color.Black.copy(alpha = 0.3f),
-                            RoundedCornerShape(8.dp)
+                            CircleShape
                         )
                 )
                 Icon(

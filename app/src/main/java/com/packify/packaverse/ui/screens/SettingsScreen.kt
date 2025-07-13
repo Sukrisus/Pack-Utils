@@ -179,7 +179,12 @@ fun SettingsScreen(
                         putExtra(Intent.EXTRA_TEXT, "Check out Packify - MCPE Texture Pack Editor! Create amazing texture packs for Minecraft PE!")
                         putExtra(Intent.EXTRA_SUBJECT, "Packify - MCPE Texture Pack Editor")
                     }
-                    context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                    try {
+                        context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                    } catch (e: Exception) {
+                        // Handle case where no app can handle the share intent
+                        viewModel?.showError("No app available to share")
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(

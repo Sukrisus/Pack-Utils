@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
 import com.packify.packaverse.data.TextureItem
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import kotlinx.coroutines.launch
@@ -61,8 +63,10 @@ fun TextureEditorScreen(
     var showColorPicker by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var opacity by remember { mutableStateOf(1f) }
+    var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -90,7 +94,7 @@ fun TextureEditorScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasUnsavedChanges) {
-                            showSaveDialog = true
+                            showExitDialog = true
                         } else {
                             onNavigateBack()
                         }
@@ -100,17 +104,25 @@ fun TextureEditorScreen(
                 },
                 actions = {
                     IconButton(onClick = { showImportDialog = true }) {
-                        Icon(Icons.Default.Upload, contentDescription = "Import")
+                        Icon(Icons.Default.Upload, contentDescription = "Import from Device")
                     }
                     IconButton(onClick = { 
-                        // Save current project
-                        viewModel.saveCurrentProject()
-                        hasUnsavedChanges = false
+                        // Save current texture
+                        canvasBitmap?.let { bitmap ->
+                            viewModel.saveEditedTexture(packId, texture.category, texture.name, bitmap)
+                            hasUnsavedChanges = false
+                        }
                     }) {
                         Icon(Icons.Default.Save, contentDescription = "Save")
                     }
-                    IconButton(onClick = { showSaveDialog = true }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    IconButton(onClick = { 
+                        if (hasUnsavedChanges) {
+                            showExitDialog = true
+                        } else {
+                            onNavigateBack()
+                        }
+                    }) {
+                        Icon(Icons.Default.Close, contentDescription = "Exit")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -147,7 +159,10 @@ fun TextureEditorScreen(
                 brushShape = brushShape,
                 selectedColor = selectedColor,
                 opacity = opacity,
-                onDrawingChanged = { hasUnsavedChanges = true }
+                onDrawingChanged = { hasUnsavedChanges = true },
+                onBitmapUpdated = { bitmap ->
+                    canvasBitmap = bitmap
+                }
             )
             
             // Advanced Color Palette
@@ -161,32 +176,34 @@ fun TextureEditorScreen(
             )
         }
         
-        // Save Dialog
-        if (showSaveDialog) {
+        // Exit Dialog
+        if (showExitDialog) {
             AlertDialog(
-                onDismissRequest = { showSaveDialog = false },
-                title = { Text("Save Changes") },
-                text = { Text("Do you want to save your changes before closing?") },
+                onDismissRequest = { showExitDialog = false },
+                title = { Text("Unsaved Changes") },
+                text = { Text("You have unsaved changes. Do you want to save before exiting?") },
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            viewModel.saveCurrentProject()
+                            canvasBitmap?.let { bitmap ->
+                                viewModel.saveEditedTexture(packId, texture.category, texture.name, bitmap)
+                            }
                             hasUnsavedChanges = false
-                            showSaveDialog = false
+                            showExitDialog = false
                             onNavigateBack()
                         }
                     ) {
-                        Text("Save")
+                        Text("Save & Exit")
                     }
                 },
                 dismissButton = {
                     TextButton(
                         onClick = {
-                            showSaveDialog = false
+                            showExitDialog = false
                             onNavigateBack()
                         }
                     ) {
-                        Text("Don't Save")
+                        Text("Exit Without Saving")
                     }
                 }
             )
@@ -441,11 +458,14 @@ fun EnhancedTextureCanvas(
     brushShape: BrushShape,
     selectedColor: Color,
     opacity: Float,
-    onDrawingChanged: () -> Unit
+    onDrawingChanged: () -> Unit,
+    onBitmapUpdated: (android.graphics.Bitmap) -> Unit
 ) {
     var path by remember { mutableStateOf(Path()) }
     var lastPoint by remember { mutableStateOf<Offset?>(null) }
     var drawingPoints by remember { mutableStateOf(listOf<Offset>()) }
+    var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var canvasSize by remember { mutableStateOf<androidx.compose.ui.geometry.Size?>(null) }
     
     Card(
         modifier = Modifier
@@ -464,6 +484,9 @@ fun EnhancedTextureCanvas(
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
+                    .onGloballyPositioned { coordinates ->
+                        canvasSize = coordinates.size.toSize()
+                    }
                     .pointerInput(currentTool, brushSize, selectedColor) {
                         detectDragGestures(
                             onDragStart = { offset ->
@@ -507,6 +530,18 @@ fun EnhancedTextureCanvas(
                                 if (currentTool == EditorTool.FILL) {
                                     // TODO: Implement flood fill algorithm
                                     onDrawingChanged()
+                                }
+                                
+                                // Capture bitmap after drawing
+                                canvasSize?.let { size ->
+                                    val bitmap = android.graphics.Bitmap.createBitmap(
+                                        size.width.toInt(),
+                                        size.height.toInt(),
+                                        android.graphics.Bitmap.Config.ARGB_8888
+                                    )
+                                    val canvas = android.graphics.Canvas(bitmap)
+                                    // TODO: Draw the current canvas state to bitmap
+                                    onBitmapUpdated(bitmap)
                                 }
                             }
                         )

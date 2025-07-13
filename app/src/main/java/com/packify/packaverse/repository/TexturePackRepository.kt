@@ -149,6 +149,24 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
+    suspend fun saveEditedTexture(packId: String, category: TextureCategory, textureName: String, bitmap: Bitmap): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val packDir = File(texturePacksDir, packId)
+            val categoryDir = File(packDir, category.mcpePath)
+            categoryDir.mkdirs()
+            
+            val textureFile = File(categoryDir, "$textureName.png")
+            
+            FileOutputStream(textureFile).use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            }
+            
+            Result.success(textureFile.absolutePath)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
     suspend fun addTexture(packId: String, category: TextureCategory, textureUri: Uri): Result<String> = withContext(Dispatchers.IO) {
         try {
             val packDir = File(texturePacksDir, packId)

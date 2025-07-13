@@ -325,4 +325,29 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
         _errorMessage.value = null
         _successMessage.value = null
     }
+    
+    fun showError(message: String) {
+        _errorMessage.value = message
+    }
+    
+    fun saveEditedTexture(packId: String, category: TextureCategory, textureName: String, bitmap: android.graphics.Bitmap) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            repository.saveEditedTexture(packId, category, textureName, bitmap)
+                .onSuccess { 
+                    _successMessage.value = "Texture saved successfully!"
+                    _hasUnsavedChanges.value = false
+                    
+                    // Reload textures for the current category
+                    loadTextures(packId, category)
+                }
+                .onFailure { 
+                    _errorMessage.value = "Failed to save texture: ${it.message}"
+                }
+            
+            _isLoading.value = false
+        }
+    }
 }
