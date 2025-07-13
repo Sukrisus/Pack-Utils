@@ -142,6 +142,7 @@ fun ActionButton(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryGridScreen(
     category: TextureCategory,
@@ -166,8 +167,7 @@ fun CategoryGridScreen(
                     modifier = Modifier
                         .aspectRatio(1f)
                         .clickable { onTextureClick(texture) },
-                    shape = RoundedCornerShape(8.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -186,6 +186,7 @@ fun CategoryGridScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BaseTextureLibraryScreen(
     category: TextureCategory,
@@ -240,8 +241,7 @@ fun BaseTextureLibraryScreen(
                         modifier = Modifier
                             .aspectRatio(1f)
                             .clickable { onTextureSelected(fileName) },
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = CardDefaults.cardElevation(4.dp)
+                        shape = RoundedCornerShape(8.dp)
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),

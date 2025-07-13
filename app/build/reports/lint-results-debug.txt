@@ -1,0 +1,273 @@
+/home/ubuntu/.gradle/caches/transforms-3/e87c7360b9fb0db8b2909567ba3aa266/transformed/runtime-release/jars/lint.jar: Warning: Library lint checks reference invalid APIs; these checks will be skipped!
+
+Lint found an issue registry (androidx.compose.runtime.lint.RuntimeIssueRegistry)
+which contains some references to invalid API:
+org.jetbrains.kotlin.analysis.api.session.KtAnalysisSessionProvider: org.jetbrains.kotlin.analysis.api.lifetime.KtLifetimeTokenFactory getTokenFactory()
+(Referenced from androidx/compose/runtime/lint/AutoboxingStateCreationDetector.class)
+
+Therefore, this lint check library is not included
+in analysis. This affects the following lint checks:
+AutoboxingStateValueProperty
+AutoboxingStateCreation
+CoroutineCreationDuringComposition
+FlowOperatorInvokedInComposition
+ComposableLambdaParameterNaming
+ComposableLambdaParameterPosition
+ComposableNaming
+StateFlowValueCalledInComposition
+CompositionLocalNaming
+MutableCollectionMutableState
+ProduceStateDoesNotAssignValue
+RememberReturnType
+OpaqueUnitKey
+UnrememberedMutableState
+
+To use this lint check, upgrade to a more recent version
+of the library. [ObsoleteLintCustomCheck]
+
+   Explanation for issues of type "ObsoleteLintCustomCheck":
+   Lint can be extended with "custom checks": additional checks implemented by
+   developers and libraries to for example enforce specific API usages
+   required by a library or a company coding style guideline.
+
+   The Lint APIs are not yet stable, so these checks may either cause a
+   performance degradation, or stop working, or provide wrong results.
+
+   This warning flags custom lint checks that are found to be using obsolete
+   APIs and will need to be updated to run in the current lint environment.
+
+   It may also flag issues found to be using a newer version of the API,
+   meaning that you need to use a newer version of lint (or Android Studio or
+   Gradle plugin etc) to work with these checks.
+
+/workspace/app/src/main/AndroidManifest.xml:23: Warning: Redundant label can be removed [RedundantLabel]
+            android:label="@string/app_name"
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "RedundantLabel":
+   When an activity does not have a label attribute, it will use the one from
+   the application tag. Since the application has already specified the same
+   label, the label on this activity can be omitted.
+
+/workspace/app/build.gradle.kts:53: Warning: A newer version of androidx.core:core-ktx than 1.12.0 is available: 1.16.0 [GradleDependency]
+    implementation("androidx.core:core-ktx:1.12.0")
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/build.gradle.kts:54: Warning: A newer version of androidx.appcompat:appcompat than 1.6.1 is available: 1.7.1 [GradleDependency]
+    implementation("androidx.appcompat:appcompat:1.6.1")
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/build.gradle.kts:55: Warning: A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.7.0 is available: 2.9.1 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/build.gradle.kts:56: Warning: A newer version of androidx.activity:activity-compose than 1.8.2 is available: 1.10.1 [GradleDependency]
+    implementation("androidx.activity:activity-compose:1.8.2")
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/build.gradle.kts:62: Warning: A newer version of androidx.navigation:navigation-compose than 2.7.6 is available: 2.9.1 [GradleDependency]
+    implementation("androidx.navigation:navigation-compose:2.7.6")
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/build.gradle.kts:63: Warning: A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.7.0 is available: 2.9.1 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/build.gradle.kts:67: Warning: A newer version of androidx.documentfile:documentfile than 1.0.1 is available: 1.1.0 [GradleDependency]
+    implementation("androidx.documentfile:documentfile:1.0.1")
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/build.gradle.kts:71: Warning: A newer version of androidx.test.ext:junit than 1.1.5 is available: 1.2.1 [GradleDependency]
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/build.gradle.kts:72: Warning: A newer version of androidx.test.espresso:espresso-core than 3.5.1 is available: 3.6.1 [GradleDependency]
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "GradleDependency":
+   This detector looks for usages of libraries where the version you are using
+   is not the current stable release. Using older versions is fine, and there
+   are cases where you deliberately want to stick with an older version.
+   However, you may simply not be aware that a more recent version is
+   available, and that is what this lint check helps find.
+
+/workspace/app/src/main/res/values/colors.xml:3: Warning: The resource R.color.purple_200 appears to be unused [UnusedResources]
+    <color name="purple_200">#FFBB86FC</color>
+           ~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/colors.xml:7: Warning: The resource R.color.teal_700 appears to be unused [UnusedResources]
+    <color name="teal_700">#FF018786</color>
+           ~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/colors.xml:8: Warning: The resource R.color.black appears to be unused [UnusedResources]
+    <color name="black">#FF000000</color>
+           ~~~~~~~~~~~~
+/workspace/app/src/main/res/values/colors.xml:9: Warning: The resource R.color.white appears to be unused [UnusedResources]
+    <color name="white">#FFFFFFFF</color>
+           ~~~~~~~~~~~~
+/workspace/app/src/main/res/values/colors.xml:10: Warning: The resource R.color.dark_background appears to be unused [UnusedResources]
+    <color name="dark_background">#FF1A1A1A</color>
+           ~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/colors.xml:11: Warning: The resource R.color.dark_surface appears to be unused [UnusedResources]
+    <color name="dark_surface">#FF2D2D2D</color>
+           ~~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/colors.xml:12: Warning: The resource R.color.light_gray appears to be unused [UnusedResources]
+    <color name="light_gray">#FFE0E0E0</color>
+           ~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/drawable/ic_launcher.xml:2: Warning: The resource R.drawable.ic_launcher appears to be unused [UnusedResources]
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+^
+/workspace/app/src/main/res/values/strings.xml:4: Warning: The resource R.string.home appears to be unused [UnusedResources]
+    <string name="home">Home</string>
+            ~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:5: Warning: The resource R.string.dashboard appears to be unused [UnusedResources]
+    <string name="dashboard">Dashboard</string>
+            ~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:6: Warning: The resource R.string.settings appears to be unused [UnusedResources]
+    <string name="settings">Settings</string>
+            ~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:7: Warning: The resource R.string.create_pack appears to be unused [UnusedResources]
+    <string name="create_pack">Create Pack</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:8: Warning: The resource R.string.manage_packs appears to be unused [UnusedResources]
+    <string name="manage_packs">Manage Packs</string>
+            ~~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:9: Warning: The resource R.string.edit_pack appears to be unused [UnusedResources]
+    <string name="edit_pack">Edit Pack</string>
+            ~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:10: Warning: The resource R.string.pack_name appears to be unused [UnusedResources]
+    <string name="pack_name">Pack Name</string>
+            ~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:11: Warning: The resource R.string.pack_description appears to be unused [UnusedResources]
+    <string name="pack_description">Pack Description</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:12: Warning: The resource R.string.version appears to be unused [UnusedResources]
+    <string name="version">Version</string>
+            ~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:13: Warning: The resource R.string.major appears to be unused [UnusedResources]
+    <string name="major">Major</string>
+            ~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:14: Warning: The resource R.string.minor appears to be unused [UnusedResources]
+    <string name="minor">Minor</string>
+            ~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:15: Warning: The resource R.string.patch appears to be unused [UnusedResources]
+    <string name="patch">Patch</string>
+            ~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:16: Warning: The resource R.string.update_pack appears to be unused [UnusedResources]
+    <string name="update_pack">Update Pack</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:17: Warning: The resource R.string.export_pack appears to be unused [UnusedResources]
+    <string name="export_pack">Export Pack</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:18: Warning: The resource R.string.delete_pack appears to be unused [UnusedResources]
+    <string name="delete_pack">Delete Pack</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:19: Warning: The resource R.string.select_icon appears to be unused [UnusedResources]
+    <string name="select_icon">Select Icon</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:20: Warning: The resource R.string.pack_icon appears to be unused [UnusedResources]
+    <string name="pack_icon">Pack Icon</string>
+            ~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:21: Warning: The resource R.string.pack_details appears to be unused [UnusedResources]
+    <string name="pack_details">Pack Details</string>
+            ~~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:22: Warning: The resource R.string.export appears to be unused [UnusedResources]
+    <string name="export">Export</string>
+            ~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:23: Warning: The resource R.string.cancel appears to be unused [UnusedResources]
+    <string name="cancel">Cancel</string>
+            ~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:24: Warning: The resource R.string.delete appears to be unused [UnusedResources]
+    <string name="delete">Delete</string>
+            ~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:25: Warning: The resource R.string.back appears to be unused [UnusedResources]
+    <string name="back">Back</string>
+            ~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:26: Warning: The resource R.string.loading appears to be unused [UnusedResources]
+    <string name="loading">Loading...</string>
+            ~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:27: Warning: The resource R.string.error_occurred appears to be unused [UnusedResources]
+    <string name="error_occurred">An error occurred</string>
+            ~~~~~~~~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values/strings.xml:28: Warning: The resource R.string.success appears to be unused [UnusedResources]
+    <string name="success">Success</string>
+            ~~~~~~~~~~~~~~
+/workspace/app/src/main/res/values-night/themes.xml:3: Warning: The resource R.style.Theme_MCPETexturePackMaker appears to be unused [UnusedResources]
+    <style name="Theme.MCPETexturePackMaker" parent="android:Theme.Material.NoActionBar">
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
+
+
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
+
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests =true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests =true.
+   ,
+
+/workspace/app/src/main/res/values/strings.xml:26: Warning: Replace "..." with ellipsis character (…, &#8230;) ? [TypographyEllipsis]
+    <string name="loading">Loading...</string>
+                           ~~~~~~~~~~
+
+   Explanation for issues of type "TypographyEllipsis":
+   You can replace the string "..." with a dedicated ellipsis character,
+   ellipsis character (u2026, &#8230;). This can help make the text more
+   readable.
+
+   https://en.wikipedia.org/wiki/Ellipsis
+
+/workspace/app/src/main/res/mipmap-hdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-mdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-xhdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-xxhdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png: Warning: Launcher icons should not fill every pixel of their square region; see the design guide for details [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-hdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-mdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+/workspace/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png: Warning: Launcher icon used as round icon did not have a circular shape [IconLauncherShape]
+
+   Explanation for issues of type "IconLauncherShape":
+   According to the Android Design Guide
+   (https://d.android.com/r/studio-ui/designer/material/iconography) your
+   launcher icons should "use a distinct silhouette", a "three-dimensional,
+   front view, with a slight perspective as if viewed from above, so that
+   users perceive some depth."
+
+   The unique silhouette implies that your launcher icon should not be a
+   filled square.
+
+/workspace/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml:2: Warning: The application adaptive icon is missing a monochrome tag [MonochromeLauncherIcon]
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+^
+/workspace/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml:2: Warning: The application adaptive roundIcon is missing a monochrome tag [MonochromeLauncherIcon]
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+^
+
+   Explanation for issues of type "MonochromeLauncherIcon":
+   If android:roundIcon and android:icon are both in your manifest, you must
+   either remove the reference to android:roundIcon if it is not needed; or,
+   supply the monochrome icon in the drawable defined by the android:roundIcon
+   and android:icon attribute.
+
+   For example, if android:roundIcon and android:icon are both in the
+   manifest, a launcher might choose to use android:roundIcon over
+   android:icon to display the adaptive app icon. Therefore, your themed
+   application iconwill not show if your monochrome attribute is not also
+   specified in android:roundIcon.
+
+/workspace/app/src/main/res/mipmap-xxhdpi/ic_launcher.png: Warning: The image ic_launcher.png varies significantly in its density-independent (dip) size across the various density versions: mipmap-hdpi/ic_launcher.png: 1x1 dp (1x1 px), mipmap-mdpi/ic_launcher.png: 1x1 dp (1x1 px), mipmap-xhdpi/ic_launcher.png: 1x1 dp (1x1 px), mipmap-xxhdpi/ic_launcher.png: 0x0 dp (1x1 px), mipmap-xxxhdpi/ic_launcher.png: 0x0 dp (1x1 px) [IconDipSize]
+/workspace/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png: Warning: The image ic_launcher_round.png varies significantly in its density-independent (dip) size across the various density versions: mipmap-hdpi/ic_launcher_round.png: 1x1 dp (1x1 px), mipmap-mdpi/ic_launcher_round.png: 1x1 dp (1x1 px), mipmap-xhdpi/ic_launcher_round.png: 1x1 dp (1x1 px), mipmap-xxhdpi/ic_launcher_round.png: 0x0 dp (1x1 px), mipmap-xxxhdpi/ic_launcher_round.png: 0x0 dp (1x1 px) [IconDipSize]
+
+   Explanation for issues of type "IconDipSize":
+   Checks the all icons which are provided in multiple densities, all compute
+   to roughly the same density-independent pixel (dip) size. This catches
+   errors where images are either placed in the wrong folder, or icons are
+   changed to new sizes but some folders are forgotten.
+
+/workspace/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png: Warning: The following unrelated icon files have identical contents: ic_launcher.png, ic_launcher_round.png, ic_launcher.png, ic_launcher_round.png, ic_launcher.png, ic_launcher_round.png, ic_launcher.png, ic_launcher_round.png, ic_launcher.png, ic_launcher_round.png [IconDuplicates]
+
+   Explanation for issues of type "IconDuplicates":
+   If an icon is repeated under different names, you can consolidate and just
+   use one of the icons and delete the others to make your application
+   smaller. However, duplicated icons usually are not intentional and can
+   sometimes point to icons that were accidentally overwritten or accidentally
+   not updated.
+
+0 errors, 61 warnings
