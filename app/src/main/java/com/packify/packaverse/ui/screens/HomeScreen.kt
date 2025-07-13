@@ -14,6 +14,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.packify.packaverse.ui.components.BottomNavigationBar
+import com.packify.packaverse.data.TextureCategory
+import com.packify.packaverse.data.TextureItem
+import com.packify.packaverse.viewmodel.TexturePackViewModel
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.items
+import coil.compose.AsyncImage
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,6 +137,50 @@ fun ActionButton(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
+        }
+    }
+}
+
+@Composable
+fun CategoryGridScreen(
+    category: TextureCategory,
+    textures: List<TextureItem>,
+    onTextureClick: (TextureItem) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(
+            text = category.displayName,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(textures) { texture ->
+                Card(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .clickable { onTextureClick(texture) },
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = texture.originalPath,
+                            contentDescription = texture.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.FillBounds
+                        )
+                    }
+                }
+            }
         }
     }
 }

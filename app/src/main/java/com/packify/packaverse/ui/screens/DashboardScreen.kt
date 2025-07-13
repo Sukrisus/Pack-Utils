@@ -42,10 +42,10 @@ fun DashboardScreen(
         TextureCategory.ENTITY,
         TextureCategory.ENVIRONMENT,
         TextureCategory.ITEMS,
-        TextureCategory.MAP, // If you have a MAP category, otherwise remove
         TextureCategory.UI,
         TextureCategory.GUI,
-        TextureCategory.COLORMAP // If you have a COLORMAP category, otherwise remove
+        TextureCategory.PARTICLE,
+        TextureCategory.MISC
     )
 
     Scaffold(
