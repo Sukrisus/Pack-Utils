@@ -234,7 +234,20 @@ fun PackifyApp() {
             val folderPath = backStackEntry.arguments?.getString("folderPath")?.replace("_", "/") ?: ""
             com.packify.packaverse.ui.screens.LibraryScreen(
                 folderPath = folderPath,
-                onImageSelected = { /* TODO: handle image selection */ },
+                onImageSelected = { assetPath ->
+                    // assetPath is like asset://base/items/filename.png
+                    // We need to call viewModel.addTexture with a Uri that the repository can handle
+                    val uri = Uri.parse(assetPath)
+                    // Find the current packId and category from the navController back stack
+                    val textureManagementEntry = navController.previousBackStackEntry
+                    val packId = textureManagementEntry?.arguments?.getString("packId") ?: ""
+                    val categoryName = textureManagementEntry?.arguments?.getString("category") ?: ""
+                    val category = com.packify.packaverse.data.TextureCategory.values().find { it.name == categoryName }
+                    if (packId.isNotEmpty() && category != null) {
+                        viewModel.addTexture(packId, category, uri)
+                        navController.popBackStack()
+                    }
+                },
                 onNavigateBack = { navController.popBackStack() }
             )
         }

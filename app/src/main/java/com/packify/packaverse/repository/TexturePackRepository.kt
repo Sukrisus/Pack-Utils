@@ -234,22 +234,30 @@ class TexturePackRepository(private val context: Context) {
             val packDir = File(projectsDir, packId)
             val categoryDir = File(packDir, category.mcpePath)
             categoryDir.mkdirs()
-            
+
             // Generate a unique filename
             val timestamp = System.currentTimeMillis()
             val fileName = "custom_texture_$timestamp.png"
             val textureFile = File(categoryDir, fileName)
-            
-            context.contentResolver.openInputStream(textureUri)?.use { inputStream ->
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                
-                FileOutputStream(textureFile).use { outputStream ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+
+            if (textureUri.scheme == "asset") {
+                // Copy from assets to textures folder
+                val assetPath = textureUri.toString().removePrefix("asset://")
+                context.assets.open(assetPath).use { inputStream ->
+                    FileOutputStream(textureFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
                 }
-                
-                bitmap.recycle()
+            } else {
+                context.contentResolver.openInputStream(textureUri)?.use { inputStream ->
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    FileOutputStream(textureFile).use { outputStream ->
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                    }
+                    bitmap.recycle()
+                }
             }
-            
+
             Result.success(textureFile.absolutePath)
         } catch (e: Exception) {
             Result.failure(e)
