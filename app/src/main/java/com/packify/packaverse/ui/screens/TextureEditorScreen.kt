@@ -271,6 +271,9 @@ fun TextureEditorScreen(
             AdvancedColorPickerDialog(
                 selectedColor = selectedColor,
                 onColorSelected = { color ->
+                    if (!customColorsState.contains(color)) {
+                        customColorsState.add(color)
+                    }
                     selectedColor = color
                     showColorPicker = false
                 },
