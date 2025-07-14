@@ -65,6 +65,14 @@ fun DashboardScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            BottomNavigationBar(
+                onNavigateToHome = { /* TODO: Implement navigation to Home */ },
+                onNavigateToDashboard = {},
+                onNavigateToSettings = onNavigateToSettings,
+                currentRoute = "dashboard"
+            )
         }
     ) { paddingValues ->
         val texturePacks by viewModel.texturePacks.collectAsState()
