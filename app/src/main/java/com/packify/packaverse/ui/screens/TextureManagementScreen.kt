@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
 import java.io.IOException
+import androidx.compose.ui.graphics.FilterQuality
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -294,7 +295,8 @@ fun LibraryScreen(folderPath: String, onImageSelected: (String) -> Unit, onNavig
                             model = "file:///android_asset/$folderPath$fileName",
                             contentDescription = fileName,
                             modifier = Modifier.fillMaxSize().padding(4.dp),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.None,
+                            filterQuality = FilterQuality.None
                         )
                     }
                 }
