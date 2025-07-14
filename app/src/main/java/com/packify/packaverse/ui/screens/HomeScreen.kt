@@ -94,7 +94,10 @@ fun HomeScreen(
                         FilledTonalButton(
                             onClick = onNavigateToCreate,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.medium
+                            shape = CircleShape,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                contentColor = Color.White
+                            )
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -103,7 +106,10 @@ fun HomeScreen(
                         FilledTonalButton(
                             onClick = onNavigateToPackList,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.medium
+                            shape = CircleShape,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                contentColor = Color.White
+                            )
                         ) {
                             Icon(Icons.Default.Edit, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
