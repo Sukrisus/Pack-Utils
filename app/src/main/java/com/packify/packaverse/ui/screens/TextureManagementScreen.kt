@@ -28,6 +28,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
+import java.io.IOException
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,28 +40,37 @@ fun TextureManagementScreen(
     packId: String,
     viewModel: TexturePackViewModel,
     onNavigateBack: () -> Unit,
-    onTextureSelected: (TextureItem) -> Unit
+    onTextureSelected: (TextureItem) -> Unit,
+    onOpenLibrary: (String) -> Unit, // new callback for opening the library
+    navController: NavController
 ) {
     val context = LocalContext.current
     val textures by viewModel.textures.collectAsState()
     val categoryTextures = textures.filter { it.category == category }
-    
+
+    // State for which texture to replace
+    var textureToReplace by remember { mutableStateOf<TextureItem?>(null) }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { 
-            viewModel.addTexture(packId, category, uri)
+        uri?.let {
+            val texture = textureToReplace
+            if (texture != null) {
+                viewModel.replaceTexture(packId, texture.mcpePath, it)
+                textureToReplace = null
+            }
         }
     }
-    
+
     LaunchedEffect(category) {
         viewModel.loadTextures(packId, category)
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = "${category.displayName} Textures",
                         fontSize = 20.sp,
@@ -70,7 +83,7 @@ fun TextureManagementScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
+                    IconButton(onClick = { onOpenLibrary("base/${category.name.lowercase()}/") }) {
                         Icon(Icons.Default.Add, contentDescription = "Add Texture")
                     }
                 },
@@ -112,9 +125,9 @@ fun TextureManagementScreen(
                         tint = Color(0xFFFFB6C1),
                         modifier = Modifier.size(32.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    
+
                     Column {
                         Text(
                             text = category.displayName,
@@ -128,9 +141,9 @@ fun TextureManagementScreen(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
-                    
+
                     Button(
                         onClick = { imagePickerLauncher.launch("image/*") },
                         colors = ButtonDefaults.buttonColors(
@@ -145,73 +158,46 @@ fun TextureManagementScreen(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Texture Grid
-            if (categoryTextures.isNotEmpty()) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(4),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(categoryTextures) { texture ->
-                        TextureGridItem(
-                            texture = texture,
-                            onClick = { onTextureSelected(texture) }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFFFB6C1).copy(alpha = 0.3f))
+                            .clickable { onOpenLibrary("base/${category.name.lowercase()}/") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Texture",
+                            tint = Color(0xFFFF6B6B),
+                            modifier = Modifier.size(40.dp)
                         )
                     }
                 }
-            } else {
-                // Empty state
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PhotoLibrary,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            modifier = Modifier.size(64.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No textures in ${category.displayName}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Click the + button to add your first texture",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { imagePickerLauncher.launch("image/*") },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFFFB6C1),
-                                contentColor = Color.Black
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Add First Texture")
+                items(categoryTextures) { texture ->
+                    TextureGridItem(
+                        texture = texture,
+                        onClick = { onTextureSelected(texture) },
+                        onEdit = {
+                            // Navigate to the editor screen for this texture
+                            navController.navigate("texture_editor/$packId/${texture.name}")
+                        },
+                        onImportFromGallery = {
+                            textureToReplace = texture
+                            imagePickerLauncher.launch("image/*")
                         }
-                    }
+                    )
                 }
             }
         }
@@ -221,8 +207,11 @@ fun TextureManagementScreen(
 @Composable
 fun TextureGridItem(
     texture: TextureItem,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEdit: () -> Unit = {},
+    onImportFromGallery: () -> Unit = {}
 ) {
+    var showDialog by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .size(80.dp)
@@ -250,8 +239,6 @@ fun TextureGridItem(
                 contentScale = ContentScale.Crop,
                 filterQuality = androidx.compose.ui.graphics.FilterQuality.None
             )
-            
-            // Overlay for custom textures
             if (texture.isCustom) {
                 Box(
                     modifier = Modifier
@@ -261,15 +248,107 @@ fun TextureGridItem(
                             CircleShape
                         )
                 )
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Custom texture",
-                    tint = Color.White,
+                IconButton(
+                    onClick = { showDialog = true },
                     modifier = Modifier
-                        .size(16.dp)
                         .align(Alignment.TopEnd)
-                        .padding(2.dp)
-                )
+                        .size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+    }
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Texture Options") },
+            text = {
+                Column {
+                    Button(onClick = {
+                        showDialog = false
+                        onEdit()
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Edit")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = {
+                        showDialog = false
+                        onImportFromGallery()
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Import from Gallery")
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+}
+
+// Stub for the new LibraryScreen composable
+@Composable
+fun LibraryScreen(folderPath: String, onImageSelected: (String) -> Unit, onNavigateBack: () -> Unit) {
+    val context = LocalContext.current
+    // List all .png files in the given assets folder
+    val imageFiles = remember(folderPath) {
+        try {
+            context.assets.list(folderPath)?.filter { it.endsWith(".png") } ?: emptyList()
+        } catch (e: IOException) {
+            emptyList<String>()
+        }
+    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Select Image from $folderPath") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        if (imageFiles.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                Text("No images found in $folderPath")
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(12.dp)
+            ) {
+                items(imageFiles) { fileName ->
+                    Card(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clickable { onImageSelected("asset://$folderPath$fileName") },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        AsyncImage(
+                            model = "file:///android_asset/$folderPath$fileName",
+                            contentDescription = fileName,
+                            modifier = Modifier.fillMaxSize().padding(4.dp),
+                            contentScale = ContentScale.None,
+                            filterQuality = FilterQuality.None
+                        )
+                    }
+                }
             }
         }
     }

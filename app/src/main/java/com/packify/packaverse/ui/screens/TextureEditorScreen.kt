@@ -63,6 +63,10 @@ fun TextureEditorScreen(
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
+    // Undo/Redo stacks
+    val undoStack = remember { mutableStateListOf<android.graphics.Bitmap>() }
+    val redoStack = remember { mutableStateListOf<android.graphics.Bitmap>() }
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -73,6 +77,28 @@ fun TextureEditorScreen(
             viewModel.replaceTexture(packId, texture.mcpePath, uri)
             hasUnsavedChanges = true
             showImportDialog = false
+        }
+    }
+
+    fun pushUndo(bitmap: android.graphics.Bitmap?) {
+        bitmap?.let {
+            undoStack.add(it.copy(it.config, true))
+            if (undoStack.size > 20) undoStack.removeAt(0)
+            redoStack.clear()
+        }
+    }
+
+    fun undo() {
+        if (undoStack.isNotEmpty()) {
+            redoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
+            canvasBitmap = undoStack.removeAt(undoStack.lastIndex)
+        }
+    }
+
+    fun redo() {
+        if (redoStack.isNotEmpty()) {
+            undoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
+            canvasBitmap = redoStack.removeAt(redoStack.lastIndex)
         }
     }
 
@@ -100,6 +126,12 @@ fun TextureEditorScreen(
                 actions = {
                     IconButton(onClick = { showImportDialog = true }) {
                         Icon(Icons.Default.Upload, contentDescription = "Import from Device")
+                    }
+                    IconButton(onClick = { undo() }) {
+                        Icon(Icons.Default.Undo, contentDescription = "Undo")
+                    }
+                    IconButton(onClick = { redo() }) {
+                        Icon(Icons.Default.Redo, contentDescription = "Redo")
                     }
                     IconButton(onClick = {
                         // Save current texture
@@ -172,7 +204,6 @@ fun TextureEditorScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            // Show the pixel grid image and drawing canvas
             EnhancedTextureCanvas(
                 texture = texture,
                 currentTool = currentTool,
@@ -180,10 +211,14 @@ fun TextureEditorScreen(
                 brushShape = BrushShape.ROUND, // Default shape
                 selectedColor = selectedColor,
                 opacity = 1f,
-                onDrawingChanged = { hasUnsavedChanges = true },
+                onDrawingChanged = {
+                    hasUnsavedChanges = true
+                    pushUndo(canvasBitmap)
+                },
                 onBitmapUpdated = { bitmap ->
                     canvasBitmap = bitmap
-                }
+                },
+                externalBitmap = canvasBitmap
             )
         }
         // Color picker dialog
@@ -467,12 +502,14 @@ fun EnhancedTextureCanvas(
     selectedColor: Color,
     opacity: Float,
     onDrawingChanged: () -> Unit,
-    onBitmapUpdated: (android.graphics.Bitmap) -> Unit
+    onBitmapUpdated: (android.graphics.Bitmap) -> Unit,
+    externalBitmap: android.graphics.Bitmap? = null
 ) {
     var path by remember { mutableStateOf(Path()) }
     var lastPoint by remember { mutableStateOf<Offset?>(null) }
     var drawingPoints by remember { mutableStateOf(listOf<Offset>()) }
-    var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    // Use externalBitmap if provided
+    var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(externalBitmap) }
     var canvasSize by remember { mutableStateOf<androidx.compose.ui.geometry.Size?>(null) }
 
     Card(

@@ -29,6 +29,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,29 +67,40 @@ fun DashboardScreen(
             )
         }
     ) { paddingValues ->
+        val texturePacks by viewModel.texturePacks.collectAsState()
+        var selectedPack by remember { mutableStateOf(texturePacks.firstOrNull()) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            PackSelectionCard(
+                texturePacks = texturePacks,
+                onPackSelected = { packId ->
+                    selectedPack = texturePacks.find { it.id == packId }
+                },
+                onExportPack = { /* export logic */ }
+            )
             categories.forEach { category ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp)
-                        .clickable { onNavigateToCategory(category) },
+                        .clickable {
+                            selectedPack?.let { onNavigateToCategory(category) }
+                        },
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF3C2F2F) // Minecraft brown
+                        containerColor = Color(0xFF3C2F2F)
                     )
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Placeholder for future icon
                         Box(
                             modifier = Modifier
                                 .size(80.dp)

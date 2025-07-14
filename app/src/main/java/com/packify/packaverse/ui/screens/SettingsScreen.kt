@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.sp
 import com.packify.packaverse.ui.components.BottomNavigationBar
 import com.packify.packaverse.ui.theme.rememberThemeManager
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +83,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {

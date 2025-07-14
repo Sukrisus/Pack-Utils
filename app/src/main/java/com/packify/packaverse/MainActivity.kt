@@ -171,7 +171,11 @@ fun PackifyApp() {
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToSettings = { navController.navigate("settings") },
                 onNavigateToCategory = { category ->
-                    // Handle category navigation if needed
+                    // Navigate to the texture management screen for the selected pack and category
+                    val selectedPackId = viewModel.texturePacks.value.firstOrNull()?.id ?: ""
+                    if (selectedPackId.isNotEmpty()) {
+                        navController.navigate("texture_management/$selectedPackId/${category.name}")
+                    }
                 }
             )
         }
@@ -180,10 +184,14 @@ fun PackifyApp() {
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHome = { 
-                    navController.popBackStack("home", false)
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 },
                 onNavigateToDashboard = { 
-                    navController.popBackStack("dashboard", false)
+                    navController.navigate("dashboard") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
                 },
                 viewModel = viewModel
             )
@@ -215,9 +223,34 @@ fun PackifyApp() {
                     onNavigateBack = { navController.popBackStack() },
                     onTextureSelected = { texture ->
                         navController.navigate("texture_editor/$packId/${texture.name}")
-                    }
+                    },
+                    onOpenLibrary = { folderPath ->
+                        navController.navigate("library/${folderPath.replace("/", "_")}")
+                    },
+                    navController = navController
                 )
             }
+        }
+        composable("library/{folderPath}") { backStackEntry ->
+            val folderPath = backStackEntry.arguments?.getString("folderPath")?.replace("_", "/") ?: ""
+            com.packify.packaverse.ui.screens.LibraryScreen(
+                folderPath = folderPath,
+                onImageSelected = { assetPath ->
+                    // assetPath is like asset://base/items/filename.png
+                    // We need to call viewModel.addTexture with a Uri that the repository can handle
+                    val uri = Uri.parse(assetPath)
+                    // Find the current packId and category from the navController back stack
+                    val textureManagementEntry = navController.previousBackStackEntry
+                    val packId = textureManagementEntry?.arguments?.getString("packId") ?: ""
+                    val categoryName = textureManagementEntry?.arguments?.getString("category") ?: ""
+                    val category = com.packify.packaverse.data.TextureCategory.values().find { it.name == categoryName }
+                    if (packId.isNotEmpty() && category != null) {
+                        viewModel.addTexture(packId, category, uri)
+                        navController.popBackStack()
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }
