@@ -604,8 +604,16 @@ fun EnhancedTextureCanvas(
                                         strokeJoin = Paint.Join.ROUND
                                         xfermode = if (currentTool == EditorTool.ERASER) android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR) else null
                                     }
+                                    // Convert Compose path to Android path
                                     val androidPath = android.graphics.Path()
-                                    canvas.drawPath(androidPath, paint)
+                                    val pathPoints = path.asComposePath().asAndroidPathPoints()
+                                    if (pathPoints.isNotEmpty()) {
+                                        androidPath.moveTo(pathPoints[0].x, pathPoints[0].y)
+                                        for (i in 1 until pathPoints.size) {
+                                            androidPath.lineTo(pathPoints[i].x, pathPoints[i].y)
+                                        }
+                                        canvas.drawPath(androidPath, paint)
+                                    }
                                     onBitmapUpdated(bmp.copy(bmp.config, true))
                                 }
                                 path.reset()
@@ -921,4 +929,20 @@ fun AdvancedColorPickerDialog(
             }
         }
     )
+}
+
+// Helper extension to convert Compose Path to a list of Android Points
+private fun androidx.compose.ui.graphics.Path.asAndroidPathPoints(): List<Offset> {
+    val points = mutableListOf<Offset>()
+    this.asAndroidPath().apply {
+        val pathMeasure = android.graphics.PathMeasure(this, false)
+        val coords = FloatArray(2)
+        var distance = 0f
+        while (distance < pathMeasure.length) {
+            pathMeasure.getPosTan(distance, coords, null)
+            points.add(Offset(coords[0], coords[1]))
+            distance += 1f
+        }
+    }
+    return points
 }
