@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
+import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -244,8 +245,15 @@ fun TextureGridItem(
 // Stub for the new LibraryScreen composable
 @Composable
 fun LibraryScreen(folderPath: String, onImageSelected: (String) -> Unit, onNavigateBack: () -> Unit) {
-    // TODO: Implement logic to list all images in the given folderPath and display them in a 4-column grid
-    // For now, just show a placeholder
+    val context = LocalContext.current
+    // List all .png files in the given assets folder
+    val imageFiles = remember(folderPath) {
+        try {
+            context.assets.list(folderPath)?.filter { it.endsWith(".png") } ?: emptyList()
+        } catch (e: IOException) {
+            emptyList<String>()
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -258,8 +266,39 @@ fun LibraryScreen(folderPath: String, onImageSelected: (String) -> Unit, onNavig
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-            Text("Library grid for $folderPath goes here")
+        if (imageFiles.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                Text("No images found in $folderPath")
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(12.dp)
+            ) {
+                items(imageFiles) { fileName ->
+                    Card(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clickable { onImageSelected("asset://$folderPath$fileName") },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        AsyncImage(
+                            model = "file:///android_asset/$folderPath$fileName",
+                            contentDescription = fileName,
+                            modifier = Modifier.fillMaxSize().padding(4.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+            }
         }
     }
 }
