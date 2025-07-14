@@ -1,4 +1,4 @@
-# MCPE Texture Pack Maker
+# PACKIFY
 
 A clean, modern Android app for creating and managing Minecraft Pocket Edition (MCPE) texture packs. Built with Kotlin and Jetpack Compose with Material 3 design.
 
