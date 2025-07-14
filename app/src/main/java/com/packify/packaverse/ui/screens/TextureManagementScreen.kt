@@ -204,6 +204,7 @@ fun TextureManagementScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextureGridItem(
     texture: TextureItem,
@@ -293,6 +294,7 @@ fun TextureGridItem(
 }
 
 // Stub for the new LibraryScreen composable
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(folderPath: String, onImageSelected: (String) -> Unit, onNavigateBack: () -> Unit) {
     val context = LocalContext.current
