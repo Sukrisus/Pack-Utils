@@ -126,6 +126,7 @@ fun TextureEditorScreen(
         }
     }
 
+    val customColorsState = remember { mutableStateListOf<Color>() }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -252,7 +253,6 @@ fun TextureEditorScreen(
                     externalBitmap = canvasBitmap
                 )
                 // Add color palette below the canvas
-                val customColorsState = remember { mutableStateListOf<Color>() }
                 AdvancedColorPalette(
                     selectedColor = selectedColor,
                     customColors = customColorsState,
