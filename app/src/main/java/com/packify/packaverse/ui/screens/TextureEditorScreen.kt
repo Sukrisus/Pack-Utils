@@ -225,22 +225,30 @@ fun TextureEditorScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            EnhancedTextureCanvas(
-                texture = texture,
-                currentTool = currentTool,
-                brushSize = brushSize, // Use the state variable
-                brushShape = BrushShape.ROUND, // Default shape
-                selectedColor = selectedColor,
-                opacity = 1f,
-                onDrawingChanged = {
-                    hasUnsavedChanges = true
-                    pushUndo(canvasBitmap)
-                },
-                onBitmapUpdated = { bitmap ->
-                    canvasBitmap = bitmap
-                },
-                externalBitmap = canvasBitmap
-            )
+            if (canvasBitmap == null) {
+                Text(
+                    text = "Failed to load texture image.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            } else {
+                EnhancedTextureCanvas(
+                    texture = texture,
+                    currentTool = currentTool,
+                    brushSize = brushSize, // Use the state variable
+                    brushShape = BrushShape.ROUND, // Default shape
+                    selectedColor = selectedColor,
+                    opacity = 1f,
+                    onDrawingChanged = {
+                        hasUnsavedChanges = true
+                    },
+                    onBitmapUpdated = { bitmap ->
+                        canvasBitmap = bitmap
+                        pushUndo(bitmap)
+                    },
+                    externalBitmap = canvasBitmap
+                )
+            }
         }
         // Color picker dialog
         if (showColorPicker) {
