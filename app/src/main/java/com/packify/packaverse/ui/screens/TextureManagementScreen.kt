@@ -32,6 +32,7 @@ import java.io.IOException
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import androidx.compose.foundation.combinedClickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,6 +88,9 @@ fun TextureManagementScreen(
         viewModel.loadTextures(packId, category)
     }
 
+    val selectedTextures = remember { mutableStateListOf<TextureItem>() }
+    var selectionMode by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -102,8 +106,21 @@ fun TextureManagementScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onOpenLibrary("base/${category.name.lowercase()}/") }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Texture")
+                    if (selectionMode && selectedTextures.isNotEmpty()) {
+                        IconButton(onClick = {
+                            selectedTextures.forEach { texture ->
+                                viewModel.deleteTexture(packId, category, texture)
+                            }
+                            selectedTextures.clear()
+                            selectionMode = false
+                            viewModel.loadTextures(packId, category)
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
+                        }
+                    } else {
+                        IconButton(onClick = { onOpenLibrary("base/${category.name.lowercase()}/") }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Texture")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -170,9 +187,26 @@ fun TextureManagementScreen(
                     }
                     // Only show actual textures, no placeholders
                     items(categoryTextures) { texture ->
+                        val isSelected = selectedTextures.contains(texture)
                         TextureGridItem(
                             texture = texture,
-                            onClick = { onTextureSelected(texture) },
+                            isSelected = isSelected,
+                            selectionMode = selectionMode,
+                            onClick = {
+                                if (selectionMode) {
+                                    if (isSelected) selectedTextures.remove(texture)
+                                    else selectedTextures.add(texture)
+                                    if (selectedTextures.isEmpty()) selectionMode = false
+                                } else {
+                                    onTextureSelected(texture)
+                                }
+                            },
+                            onLongPress = {
+                                if (!selectionMode) {
+                                    selectionMode = true
+                                    selectedTextures.add(texture)
+                                }
+                            },
                             onEdit = {
                                 navController.navigate("texture_editor/$packId/${texture.name}")
                             },
@@ -203,7 +237,10 @@ fun TextureManagementScreen(
 @Composable
 fun TextureGridItem(
     texture: TextureItem,
+    isSelected: Boolean = false,
+    selectionMode: Boolean = false,
     onClick: () -> Unit,
+    onLongPress: () -> Unit = {},
     onEdit: () -> Unit = {},
     onImportFromGallery: () -> Unit = {}
 ) {
@@ -211,11 +248,15 @@ fun TextureGridItem(
     Card(
         modifier = Modifier
             .size(80.dp)
-            .clickable { onClick() },
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongPress
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -234,7 +275,21 @@ fun TextureGridItem(
                 contentScale = ContentScale.Crop,
                 filterQuality = androidx.compose.ui.graphics.FilterQuality.None
             )
-            if (texture.isCustom) {
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            } else if (texture.isCustom) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
