@@ -120,57 +120,6 @@ fun TextureManagementScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header with category info
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = when (category) {
-                            TextureCategory.BLOCKS -> Icons.Default.ViewInAr
-                            TextureCategory.ITEMS -> Icons.Default.Inventory
-                            TextureCategory.ENTITY -> Icons.Default.Person
-                            TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
-                            TextureCategory.GUI -> Icons.Default.Dashboard
-                            TextureCategory.PARTICLE -> Icons.Default.Star
-                            TextureCategory.MISC -> Icons.Default.MoreVert
-                        },
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = category.displayName,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "${categoryTextures.size} textures",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    FilledTonalButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add Texture")
-                    }
-                }
-            }
             // Texture Grid
             if (categoryTextures.isEmpty()) {
                 // Centered plus icon only
