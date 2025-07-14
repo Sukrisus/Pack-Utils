@@ -40,6 +40,7 @@ import com.packify.packaverse.data.TextureItem
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import kotlinx.coroutines.launch
 import java.io.InputStream
+import androidx.compose.ui.platform.LocalDensity
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -534,16 +535,22 @@ fun EnhancedTextureCanvas(
     onBitmapUpdated: (android.graphics.Bitmap) -> Unit,
     externalBitmap: android.graphics.Bitmap? = null
 ) {
+    val density = LocalDensity.current
     var path by remember { mutableStateOf(Path()) }
     var lastPoint by remember { mutableStateOf<Offset?>(null) }
     var drawingPoints by remember { mutableStateOf(listOf<Offset>()) }
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(externalBitmap) }
     var canvasSize by remember { mutableStateOf<androidx.compose.ui.geometry.Size?>(null) }
 
+    val bitmapWidth = canvasBitmap?.width ?: 64
+    val bitmapHeight = canvasBitmap?.height ?: 64
+    val widthDp = with(density) { bitmapWidth.toDp() }
+    val heightDp = with(density) { bitmapHeight.toDp() }
+
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.7f)
+            .width(widthDp)
+            .height(heightDp)
             .padding(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -551,12 +558,14 @@ fun EnhancedTextureCanvas(
     ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+                .width(widthDp)
+                .height(heightDp)
+                .padding(8.dp)
         ) {
             Canvas(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .width(widthDp)
+                    .height(heightDp)
                     .onGloballyPositioned { coordinates ->
                         canvasSize = coordinates.size.toSize()
                     }
