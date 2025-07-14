@@ -43,13 +43,14 @@ fun TextureDropdown(
     var isExpanded by remember { mutableStateOf(false) }
     
     Card(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        onClick = { isExpanded = !isExpanded }
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -70,29 +71,22 @@ fun TextureDropdown(
                         TextureCategory.MISC -> Icons.Default.MoreVert
                     },
                     contentDescription = null,
-                    tint = Color(0xFFFFB6C1),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
-                
                 Spacer(modifier = Modifier.width(12.dp))
-                
                 Text(
                     text = category.displayName,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
                 Spacer(modifier = Modifier.weight(1f))
-                
                 Text(
                     text = "${textures.size} textures",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
                 Spacer(modifier = Modifier.width(8.dp))
-                
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = null,

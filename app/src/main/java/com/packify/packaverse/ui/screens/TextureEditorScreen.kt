@@ -129,8 +129,7 @@ fun TextureEditorScreen(
                 title = {
                     Text(
                         text = "Edit ${texture.name}",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Normal
+                        style = MaterialTheme.typography.titleLarge
                     )
                 },
                 navigationIcon = {
@@ -155,7 +154,6 @@ fun TextureEditorScreen(
                         Icon(Icons.Default.Redo, contentDescription = "Redo")
                     }
                     IconButton(onClick = {
-                        // Save current texture
                         canvasBitmap?.let { bitmap ->
                             viewModel.saveEditedTexture(packId, texture.category, texture.name, bitmap)
                             hasUnsavedChanges = false
@@ -182,7 +180,8 @@ fun TextureEditorScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(12.dp)
+                    .systemBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -221,7 +220,8 @@ fun TextureEditorScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .systemBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
