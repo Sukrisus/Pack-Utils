@@ -229,18 +229,20 @@ fun TextureManagementScreen(
                 Column {
                     Button(onClick = {
                         showAssetDialog = false
+                        // Launch image picker to import from device and replace the texture image
+                        textureToReplace = null // No existing texture, so just import
+                        imagePickerLauncher.launch("image/*")
                         pendingAssetPath = null
-                        // Add the asset as a new texture (import)
-                        val uri = Uri.parse(pendingAssetPath!!)
-                        viewModel.addTexture(packId, category, uri)
                     }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Import from Library")
+                        Text("Import from Device")
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = {
                         showAssetDialog = false
+                        // Add the asset as a new texture (edit)
+                        val uri = Uri.parse(pendingAssetPath!!)
+                        viewModel.addTexture(packId, category, uri)
                         pendingAssetPath = null
-                        // Optionally, you could trigger an edit flow here
                     }, modifier = Modifier.fillMaxWidth()) {
                         Text("Edit")
                     }
