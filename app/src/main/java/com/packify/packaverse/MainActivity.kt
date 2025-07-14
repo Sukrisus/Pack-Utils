@@ -171,7 +171,11 @@ fun PackifyApp() {
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToSettings = { navController.navigate("settings") },
                 onNavigateToCategory = { category ->
-                    // Handle category navigation if needed
+                    // Navigate to the texture management screen for the selected pack and category
+                    val selectedPackId = viewModel.texturePacks.value.firstOrNull()?.id ?: ""
+                    if (selectedPackId.isNotEmpty()) {
+                        navController.navigate("texture_management/$selectedPackId/${category.name}")
+                    }
                 }
             )
         }
@@ -180,10 +184,14 @@ fun PackifyApp() {
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHome = { 
-                    navController.popBackStack("home", false)
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 },
                 onNavigateToDashboard = { 
-                    navController.popBackStack("dashboard", false)
+                    navController.navigate("dashboard") {
+                        popUpTo("dashboard") { inclusive = true }
+                    }
                 },
                 viewModel = viewModel
             )
