@@ -184,7 +184,7 @@ fun TextureManagementScreen(
                             .size(80.dp)
                             .clip(MaterialTheme.shapes.medium)
                             .background(MaterialTheme.colorScheme.primaryContainer)
-                            .clickable { imagePickerLauncher.launch("image/*") },
+                            .clickable { onOpenLibrary("base/${category.name.lowercase()}/") },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
