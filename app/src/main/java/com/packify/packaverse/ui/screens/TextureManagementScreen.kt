@@ -241,7 +241,13 @@ fun TextureManagementScreen(
                         showAssetDialog = false
                         // Add the asset as a new texture (edit)
                         val uri = Uri.parse(pendingAssetPath!!)
+                        // Add the asset as a new texture
                         viewModel.addTexture(packId, category, uri)
+                        // Find the texture name from the asset path
+                        val fileName = pendingAssetPath!!.substringAfterLast('/')
+                        val textureName = fileName.substringBeforeLast('.')
+                        // Navigate to the editor for the new texture
+                        navController.navigate("texture_editor/$packId/$textureName")
                         pendingAssetPath = null
                     }, modifier = Modifier.fillMaxWidth()) {
                         Text("Edit")
