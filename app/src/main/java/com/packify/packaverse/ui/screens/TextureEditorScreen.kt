@@ -605,7 +605,6 @@ fun EnhancedTextureCanvas(
                                         xfermode = if (currentTool == EditorTool.ERASER) android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR) else null
                                     }
                                     val androidPath = android.graphics.Path()
-                                    path.asComposePath().applyTo(androidPath)
                                     canvas.drawPath(androidPath, paint)
                                     onBitmapUpdated(bmp.copy(bmp.config, true))
                                 }

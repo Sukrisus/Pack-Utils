@@ -286,7 +286,7 @@ fun TextureGridItem(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(4.dp),
-                contentScale = ContentScale.Cover,
+                contentScale = ContentScale.Crop,
                 filterQuality = androidx.compose.ui.graphics.FilterQuality.None
             )
             if (texture.isCustom) {
@@ -395,7 +395,7 @@ fun LibraryScreen(folderPath: String, onImageSelected: (String) -> Unit, onNavig
                             model = "file:///android_asset/$folderPath$fileName",
                             contentDescription = fileName,
                             modifier = Modifier.fillMaxSize().padding(4.dp),
-                            contentScale = ContentScale.Cover,
+                            contentScale = ContentScale.Crop,
                             filterQuality = FilterQuality.None
                         )
                     }

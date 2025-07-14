@@ -212,7 +212,7 @@ fun TextureGridItem(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(4.dp),
-                contentScale = ContentScale.Cover,
+                contentScale = ContentScale.Crop,
                 filterQuality = androidx.compose.ui.graphics.FilterQuality.None // Pixelated effect
             )
             

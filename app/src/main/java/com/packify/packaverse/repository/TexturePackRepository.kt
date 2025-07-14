@@ -245,7 +245,7 @@ class TexturePackRepository(private val context: Context) {
                     // Try to get file name from uri
                     var name: String? = null
                     context.contentResolver.query(textureUri, null, null, null, null)?.use { cursor ->
-                        val nameIndex = cursor.getColumnIndexOpenable(android.provider.OpenableColumns.DISPLAY_NAME)
+                        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                         if (nameIndex >= 0 && cursor.moveToFirst()) {
                             name = cursor.getString(nameIndex)
                         }

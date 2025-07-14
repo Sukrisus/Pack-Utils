@@ -40,6 +40,7 @@ import android.annotation.SuppressLint
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.foundation.isSystemInDarkTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,10 +48,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             PackifyTheme {
                 val backgroundColor = MaterialTheme.colorScheme.background
+                val isDark = isSystemInDarkTheme()
                 SideEffect {
                     WindowCompat.setDecorFitsSystemWindows(window, false)
                     window.statusBarColor = backgroundColor.toArgb()
-                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !isSystemInDarkTheme()
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !isDark
                 }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
