@@ -91,9 +91,7 @@ class TexturePackRepository(private val context: Context) {
                 File(packDir, category.mcpePath).mkdirs()
             }
             
-            // Save texture pack metadata
-            saveTexturePackMetadata(texturePack.copy(folderPath = packDir.absolutePath))
-            
+            // No metadata.json creation
             Result.success(texturePack)
         } catch (e: Exception) {
             Result.failure(e)
@@ -105,9 +103,12 @@ class TexturePackRepository(private val context: Context) {
             val projectsDir = getProjectsDir()
             projectsDir.listFiles()?.mapNotNull { dir ->
                 if (dir.isDirectory) {
-                    val metadataFile = File(dir, "metadata.json")
-                    if (metadataFile.exists()) {
-                        gson.fromJson(metadataFile.readText(), TexturePack::class.java)
+                    // Only use manifest.json or directory name for pack info
+                    val manifestFile = File(dir, "manifest.json")
+                    if (manifestFile.exists()) {
+                        // You may want to parse manifest.json here if needed
+                        // For now, just return a TexturePack with directory name
+                        TexturePack(name = dir.name, description = "")
                     } else null
                 } else null
             } ?: emptyList()
@@ -235,7 +236,7 @@ class TexturePackRepository(private val context: Context) {
             val categoryDir = File(packDir, category.mcpePath)
             categoryDir.mkdirs()
 
-            // Use the original file name
+            // Always require the original file name
             val fileName = when {
                 textureUri.scheme == "asset" -> {
                     val assetPath = textureUri.toString().removePrefix("asset://")
@@ -253,6 +254,9 @@ class TexturePackRepository(private val context: Context) {
                     name ?: File(textureUri.path ?: "").name
                 }
                 else -> File(textureUri.path ?: "").name
+            }
+            if (fileName.isBlank()) {
+                return@withContext Result.failure(Exception("Could not determine file name for texture"))
             }
             val textureFile = File(categoryDir, fileName)
 
@@ -330,15 +334,15 @@ class TexturePackRepository(private val context: Context) {
                 manifestFile.writeText(gson.toJson(updatedManifest))
                 
                 // Update metadata
-                val texturePack = getTexturePackById(packId)
-                texturePack?.let {
-                    saveTexturePackMetadata(it.copy(
-                        name = name,
-                        description = description,
-                        version = version,
-                        modifiedAt = System.currentTimeMillis()
-                    ))
-                }
+                // val texturePack = getTexturePackById(packId) // Removed
+                // texturePack?.let { // Removed
+                //     saveTexturePackMetadata(it.copy( // Removed
+                //         name = name, // Removed
+                //         description = description, // Removed
+                //         version = version, // Removed
+                //         modifiedAt = System.currentTimeMillis() // Removed
+                //     )) // Removed
+                // } // Removed
             }
             
             Result.success(Unit)
@@ -377,14 +381,12 @@ class TexturePackRepository(private val context: Context) {
         try {
             val packDir = File(getProjectsDir(), packId)
             
-            // Delete all texture files but keep manifest and metadata
+            // Delete all texture files but keep manifest and icon
             val manifestFile = File(packDir, "manifest.json")
-            val metadataFile = File(packDir, "metadata.json")
             val iconFile = File(packDir, "pack_icon.png")
             
             // Save important files temporarily
             val manifest = if (manifestFile.exists()) manifestFile.readText() else null
-            val metadata = if (metadataFile.exists()) metadataFile.readText() else null
             val iconExists = iconFile.exists()
             val iconData = if (iconExists) iconFile.readBytes() else null
             
@@ -399,56 +401,7 @@ class TexturePackRepository(private val context: Context) {
             
             // Restore important files
             manifest?.let { manifestFile.writeText(it) }
-            metadata?.let { metadataFile.writeText(it) }
             iconData?.let { iconFile.writeBytes(it) }
-            
-            // Update modification time
-            val texturePack = getTexturePackById(packId)
-            texturePack?.let {
-                saveTexturePackMetadata(it.copy(modifiedAt = System.currentTimeMillis()))
-            }
-            
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
-    suspend fun saveProject(packId: String): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val packDir = File(getProjectsDir(), packId)
-            
-            // Create backup directory
-            val backupDir = File(packDir, "backup")
-            backupDir.mkdirs()
-            
-            // Create timestamp for backup
-            val timestamp = System.currentTimeMillis()
-            val backupFile = File(backupDir, "backup_$timestamp.zip")
-            
-            // Create backup zip
-            FileOutputStream(backupFile).use { outputStream ->
-                ZipOutputStream(outputStream).use { zipOut ->
-                    TextureCategory.values().forEach { category ->
-                        val categoryDir = File(packDir, category.mcpePath)
-                        if (categoryDir.exists()) {
-                            addFolderToZip(categoryDir, category.mcpePath, zipOut)
-                        }
-                    }
-                }
-            }
-            
-            // Update modification time
-            val texturePack = getTexturePackById(packId)
-            texturePack?.let {
-                saveTexturePackMetadata(it.copy(modifiedAt = System.currentTimeMillis()))
-            }
-            
-            // Clean up old backups (keep only last 5)
-            val backupFiles = backupDir.listFiles()?.sortedByDescending { it.lastModified() }
-            if (backupFiles != null && backupFiles.size > 5) {
-                backupFiles.drop(5).forEach { it.delete() }
-            }
             
             Result.success(Unit)
         } catch (e: Exception) {
@@ -469,16 +422,5 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
-    private fun saveTexturePackMetadata(texturePack: TexturePack) {
-        val packDir = File(getProjectsDir(), texturePack.id)
-        val metadataFile = File(packDir, "metadata.json")
-        metadataFile.writeText(gson.toJson(texturePack))
-    }
-    
-    private fun getTexturePackById(packId: String): TexturePack? {
-        val metadataFile = File(File(getProjectsDir(), packId), "metadata.json")
-        return if (metadataFile.exists()) {
-            gson.fromJson(metadataFile.readText(), TexturePack::class.java)
-        } else null
-    }
+    // Remove all saveTexturePackMetadata and getTexturePackById functions and their usages
 }

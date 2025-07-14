@@ -59,6 +59,9 @@ fun TextureManagementScreen(
             if (texture != null) {
                 viewModel.replaceTexture(packId, texture.mcpePath, it)
                 textureToReplace = null
+            } else {
+                // Add new texture if not replacing
+                viewModel.addTexture(packId, category, it)
             }
         }
     }
@@ -67,6 +70,7 @@ fun TextureManagementScreen(
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
     var showAssetDialog by remember { mutableStateOf(false) }
     var pendingAssetPath by remember { mutableStateOf<String?>(null) }
+    var navigateToTextureName by remember { mutableStateOf<String?>(null) }
 
     // Listen for asset selection from library
     LaunchedEffect(Unit) {
@@ -174,6 +178,7 @@ fun TextureManagementScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
+                // Only the + button as the first item
                 item {
                     Box(
                         modifier = Modifier
@@ -191,6 +196,7 @@ fun TextureManagementScreen(
                         )
                     }
                 }
+                // Only show actual textures, no placeholders
                 items(categoryTextures) { texture ->
                     TextureGridItem(
                         texture = texture,
@@ -228,15 +234,14 @@ fun TextureManagementScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = {
                         showAssetDialog = false
-                        // Add the asset as a new texture (edit)
-                        val uri = Uri.parse(pendingAssetPath!!)
                         // Add the asset as a new texture
+                        val uri = Uri.parse(pendingAssetPath!!)
                         viewModel.addTexture(packId, category, uri)
-                        // Find the texture name from the asset path
+                        // Reload textures and set navigation target
+                        viewModel.loadTextures(packId, category)
                         val fileName = pendingAssetPath!!.substringAfterLast('/')
                         val textureName = fileName.substringBeforeLast('.')
-                        // Navigate to the editor for the new texture
-                        navController.navigate("texture_editor/$packId/$textureName")
+                        navigateToTextureName = textureName
                         pendingAssetPath = null
                     }, modifier = Modifier.fillMaxWidth()) {
                         Text("Edit")
@@ -251,6 +256,17 @@ fun TextureManagementScreen(
                 }) { Text("Cancel") }
             }
         )
+    }
+    // Navigation effect for new texture
+    LaunchedEffect(navigateToTextureName, viewModel.textures.value) {
+        val textureName = navigateToTextureName
+        if (textureName != null) {
+            val newTexture = viewModel.textures.value.find { it.name == textureName && it.category == category }
+            if (newTexture != null) {
+                navController.navigate("texture_editor/$packId/${newTexture.name}")
+                navigateToTextureName = null
+            }
+        }
     }
 }
 
