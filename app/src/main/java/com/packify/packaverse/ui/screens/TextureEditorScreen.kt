@@ -64,6 +64,7 @@ fun TextureEditorScreen(
     var showExitDialog by remember { mutableStateOf(false) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var brushSize by remember { mutableStateOf(1f) } // Default to 1 pixel
 
     // Undo/Redo stacks
     val undoStack = remember { mutableStateListOf<android.graphics.Bitmap>() }
@@ -227,7 +228,7 @@ fun TextureEditorScreen(
             EnhancedTextureCanvas(
                 texture = texture,
                 currentTool = currentTool,
-                brushSize = 10f, // Default size
+                brushSize = brushSize, // Use the state variable
                 brushShape = BrushShape.ROUND, // Default shape
                 selectedColor = selectedColor,
                 opacity = 1f,
