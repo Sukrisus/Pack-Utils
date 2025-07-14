@@ -62,7 +62,7 @@ class TexturePackRepository(private val context: Context) {
     }
     
     private fun sanitizeNameForFolder(name: String): String {
-        return name.trim().replace(Regex("[^a-zA-Z0-9_\- ]"), "_").replace(" ", "_")
+        return name.trim().replace(Regex("[^a-zA-Z0-9_ -]"), "_").replace(" ", "_")
     }
     
     suspend fun createTexturePack(name: String, description: String): Result<TexturePack> = withContext(Dispatchers.IO) {
