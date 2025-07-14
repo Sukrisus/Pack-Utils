@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 
+@file:OptIn(ExperimentalMaterialApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TextureManagementScreen(
