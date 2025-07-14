@@ -411,6 +411,14 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
+    suspend fun deleteTexture(packId: String, category: TextureCategory, texture: TextureItem) = withContext(Dispatchers.IO) {
+        val projectsDir = getProjectsDir()
+        val packDir = File(projectsDir, packId)
+        val categoryDir = File(packDir, category.mcpePath)
+        val file = File(categoryDir, texture.name + ".png")
+        if (file.exists()) file.delete()
+    }
+    
     private fun addFolderToZip(folder: File, parentPath: String, zipOut: ZipOutputStream) {
         folder.listFiles()?.forEach { file ->
             if (file.isDirectory) {

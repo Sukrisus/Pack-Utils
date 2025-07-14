@@ -138,7 +138,7 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] /home/ubuntu/.gradle/caches
 	android:supportsRtl
 		ADDED from /workspace/app/src/main/AndroidManifest.xml:17:9-35
 	android:label
-		ADDED from /workspace/app/src/main/AndroidManifest.xml:15:9-41
+		ADDED from /workspace/app/src/main/AndroidManifest.xml:15:9-32
 	android:fullBackupContent
 		ADDED from /workspace/app/src/main/AndroidManifest.xml:13:9-54
 	android:roundIcon

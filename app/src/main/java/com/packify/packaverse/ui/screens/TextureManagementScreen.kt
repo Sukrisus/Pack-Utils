@@ -33,8 +33,10 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TextureManagementScreen(
     category: TextureCategory,
@@ -233,7 +235,7 @@ fun TextureManagementScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TextureGridItem(
     texture: TextureItem,
