@@ -6,7 +6,7 @@
     maven="MCPE Texture Pack Maker:app:"
     agpVersion="8.2.0"
     buildFolder="build"
-    bootClassPath="/home/ubuntu/android-sdk/platforms/android-34/android.jar:/home/ubuntu/android-sdk/build-tools/34.0.0/core-lambda-stubs.jar"
+    bootClassPath="/opt/android-sdk/platforms/android-34/android.jar:/opt/android-sdk/build-tools/34.0.0/core-lambda-stubs.jar"
     javaSourceLevel="1.8"
     compileTarget="android-34"
     neverShrinking="true">

@@ -37,19 +37,10 @@ fun TextureDropdown(
     viewModel: TexturePackViewModel,
     packId: String,
     onTextureSelected: (TextureItem) -> Unit,
+    onNavigateToTextureManagement: (TextureCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { 
-            // Add the selected texture to the pack
-            viewModel.addTexture(packId, category, uri)
-        }
-    }
     
     Card(
         modifier = modifier
@@ -113,7 +104,7 @@ fun TextureDropdown(
             if (isExpanded) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Square Plus Icon at Top (as specified in requirements)
+                // Square Plus Icon at Top - now navigates to TextureManagementScreen
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start
@@ -121,7 +112,7 @@ fun TextureDropdown(
                     Card(
                         modifier = Modifier
                             .size(80.dp)
-                            .clickable { imagePickerLauncher.launch("image/*") },
+                            .clickable { onNavigateToTextureManagement(category) },
                         colors = CardDefaults.cardColors(
                             containerColor = Color(0xFFFFB6C1).copy(alpha = 0.3f)
                         ),
@@ -133,7 +124,7 @@ fun TextureDropdown(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = "Add new texture",
+                                contentDescription = "Manage textures",
                                 tint = Color(0xFFFFB6C1),
                                 modifier = Modifier.size(32.dp)
                             )
@@ -186,7 +177,7 @@ fun TextureDropdown(
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                             Text(
-                                text = "Click the + button above to add textures",
+                                text = "Click the + button above to manage textures",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )

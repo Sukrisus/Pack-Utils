@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.2.0" type="conditional_incidents">
+
+    <incident
+        id="ScopedStorage"
+        severity="warning"
+        message="">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*manifest*0}"
+            line="5"
+            column="36"
+            startOffset="196"
+            endLine="5"
+            endColumn="76"
+            endOffset="236"/>
+        <map>
+            <entry
+                name="maxSdkVersion"
+                int="2147483647"/>
+            <entry
+                name="read"
+                boolean="true"/>
+        </map>
+    </incident>
+
+    <incident
+        id="ScopedStorage"
+        severity="warning"
+        message="">
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*manifest*0}"
+            line="6"
+            column="36"
+            startOffset="276"
+            endLine="6"
+            endColumn="77"
+            endOffset="317"/>
+        <map>
+            <entry
+                name="maxSdkVersion"
+                int="2147483647"/>
+            <entry
+                name="read"
+                boolean="false"/>
+        </map>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 31">
+        <fix-replace
+            description="Delete tools:targetApi"
+            replacement="">
+            <range
+                file="${:app*debug*MAIN*sourceProvider*0*manifest*0}"
+                startOffset="839"
+                endOffset="859"/>
+        </fix-replace>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*manifest*0}"
+            line="19"
+            column="9"
+            startOffset="839"
+            endLine="19"
+            endColumn="29"
+            endOffset="859"/>
+        <map>
+            <condition minGE="ffffffffc0000000"/>
+        </map>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 30">
+        <fix-replace
+            description="Delete @TargetApi"
+            replacement="">
+            <range
+                file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/MainActivity.kt"
+                startOffset="9748"
+                endOffset="9762"/>
+        </fix-replace>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/MainActivity.kt"
+            line="264"
+            column="1"
+            startOffset="9748"
+            endLine="264"
+            endColumn="15"
+            endOffset="9762"/>
+        <map>
+            <condition minGE="ffffffffe0000000"/>
+        </map>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 30">
+        <fix-replace
+            description="Delete @TargetApi"
+            replacement="">
+            <range
+                file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/repository/TexturePackRepository.kt"
+                startOffset="1555"
+                endOffset="1569"/>
+        </fix-replace>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/repository/TexturePackRepository.kt"
+            line="44"
+            column="5"
+            startOffset="1555"
+            endLine="44"
+            endColumn="19"
+            endOffset="1569"/>
+        <map>
+            <condition minGE="ffffffffe0000000"/>
+        </map>
+    </incident>
+
+    <incident
+        id="ObsoleteSdkInt"
+        severity="warning"
+        message="Unnecessary; SDK_INT is always >= 30">
+        <fix-replace
+            description="Delete @TargetApi"
+            replacement="">
+            <range
+                file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/viewmodel/TexturePackViewModel.kt"
+                startOffset="13497"
+                endOffset="13511"/>
+        </fix-replace>
+        <location
+            file="${:app*debug*MAIN*sourceProvider*0*javaDir*0}/com/packify/packaverse/viewmodel/TexturePackViewModel.kt"
+            line="375"
+            column="5"
+            startOffset="13497"
+            endLine="375"
+            endColumn="19"
+            endOffset="13511"/>
+        <map>
+            <condition minGE="ffffffffe0000000"/>
+        </map>
+    </incident>
+
+</incidents>

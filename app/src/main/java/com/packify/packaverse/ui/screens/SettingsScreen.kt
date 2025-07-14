@@ -124,6 +124,46 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            // Storage Section
+            SettingsSection(
+                title = "Storage",
+                icon = Icons.Default.Storage
+            ) {
+                val storageStatus = if (viewModel?.hasStoragePermission() == true) {
+                    "External Storage (Recommended)"
+                } else {
+                    "Internal Storage (Projects will be deleted with app)"
+                }
+                
+                val projectsPath = viewModel?.getProjectsDirectoryPath() ?: "Unknown"
+                
+                SettingsItem(
+                    title = "Storage Location",
+                    subtitle = storageStatus,
+                    icon = Icons.Default.Folder,
+                    onClick = {}
+                )
+                
+                SettingsItem(
+                    title = "Projects Directory",
+                    subtitle = projectsPath,
+                    icon = Icons.Default.FolderOpen,
+                    onClick = {}
+                )
+                
+                if (viewModel?.hasStoragePermission() != true) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Grant storage permission to save projects externally so they won't be deleted when you uninstall the app.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 32.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             // About Section
             SettingsSection(
                 title = "About",

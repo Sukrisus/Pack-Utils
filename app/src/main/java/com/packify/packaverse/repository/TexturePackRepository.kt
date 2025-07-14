@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -14,14 +16,48 @@ import kotlinx.coroutines.withContext
 import java.io.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import android.annotation.TargetApi
 
 class TexturePackRepository(private val context: Context) {
     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
-    private val texturePacksDir = File(context.filesDir, "texture_packs")
+    
+    // Use external storage for projects
+    private val externalProjectsDir: File? = if (hasStoragePermission()) {
+        File(Environment.getExternalStorageDirectory(), "packify/projects").apply {
+            if (!exists()) {
+                mkdirs()
+            }
+        }
+    } else null
+    
+    // Fallback to internal storage if no external permission
+    private val internalProjectsDir = File(context.filesDir, "texture_packs")
+    
+    private fun hasStoragePermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getApi30StoragePermission()
+        } else {
+            context.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    @TargetApi(30)
+    private fun getApi30StoragePermission(): Boolean {
+        return try {
+            Environment.isExternalStorageManager()
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private fun getProjectsDir(): File {
+        return externalProjectsDir ?: internalProjectsDir
+    }
     
     init {
-        if (!texturePacksDir.exists()) {
-            texturePacksDir.mkdirs()
+        // Ensure internal directory exists as fallback
+        if (!internalProjectsDir.exists()) {
+            internalProjectsDir.mkdirs()
         }
     }
     
@@ -32,7 +68,8 @@ class TexturePackRepository(private val context: Context) {
                 description = description
             )
             
-            val packDir = File(texturePacksDir, texturePack.id)
+            val projectsDir = getProjectsDir()
+            val packDir = File(projectsDir, texturePack.id)
             packDir.mkdirs()
             
             // Create manifest.json
@@ -65,7 +102,8 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun getTexturePacks(): List<TexturePack> = withContext(Dispatchers.IO) {
         try {
-            texturePacksDir.listFiles()?.mapNotNull { dir ->
+            val projectsDir = getProjectsDir()
+            projectsDir.listFiles()?.mapNotNull { dir ->
                 if (dir.isDirectory) {
                     val metadataFile = File(dir, "metadata.json")
                     if (metadataFile.exists()) {
@@ -80,7 +118,8 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun getTextures(packId: String, category: TextureCategory): List<TextureItem> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val projectsDir = getProjectsDir()
+            val packDir = File(projectsDir, packId)
             val categoryDir = File(packDir, category.mcpePath)
             
             // First, load base textures from assets
@@ -129,7 +168,8 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun replaceTexture(packId: String, texturePath: String, newTextureUri: Uri): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val projectsDir = getProjectsDir()
+            val packDir = File(projectsDir, packId)
             val textureFile = File(packDir, texturePath)
             
             // Ensure the directory exists
@@ -172,14 +212,17 @@ class TexturePackRepository(private val context: Context) {
 
     suspend fun saveEditedTexture(packId: String, category: TextureCategory, textureName: String, bitmap: Bitmap): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val categoryDir = getOrCreateCategoryDir(packId, category)
-            if (categoryDir == null) return@withContext Result.failure(Exception("Cannot access category directory"))
-            val textureFile = categoryDir.findFile("$textureName.png") ?: categoryDir.createFile("image/png", textureName)
-            if (textureFile == null) return@withContext Result.failure(Exception("Cannot create texture file"))
-            context.contentResolver.openOutputStream(textureFile.uri)?.use { outputStream ->
+            val projectsDir = getProjectsDir()
+            val packDir = File(projectsDir, packId)
+            val categoryDir = File(packDir, category.mcpePath)
+            categoryDir.mkdirs()
+            
+            val textureFile = File(categoryDir, "$textureName.png")
+            FileOutputStream(textureFile).use { outputStream ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
             }
-            Result.success(textureFile.uri.toString())
+            
+            Result.success(textureFile.absolutePath)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -187,7 +230,8 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun addTexture(packId: String, category: TextureCategory, textureUri: Uri): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val projectsDir = getProjectsDir()
+            val packDir = File(projectsDir, packId)
             val categoryDir = File(packDir, category.mcpePath)
             categoryDir.mkdirs()
             
@@ -214,7 +258,7 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun updatePackIcon(packId: String, iconUri: Uri): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val packDir = File(getProjectsDir(), packId)
             val iconFile = File(packDir, "pack_icon.png")
             
             context.contentResolver.openInputStream(iconUri)?.use { inputStream ->
@@ -237,7 +281,7 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun updateManifest(packId: String, name: String, description: String, version: List<Int>, minEngineVersion: List<Int> = listOf(1, 16, 0)): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val packDir = File(getProjectsDir(), packId)
             val manifestFile = File(packDir, "manifest.json")
             
             if (manifestFile.exists()) {
@@ -273,7 +317,7 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun exportTexturePack(packId: String, outputUri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val packDir = File(getProjectsDir(), packId)
             
             context.contentResolver.openOutputStream(outputUri)?.use { outputStream ->
                 ZipOutputStream(outputStream).use { zipOut ->
@@ -289,7 +333,7 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun deleteTexturePack(packId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val packDir = File(getProjectsDir(), packId)
             packDir.deleteRecursively()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -299,7 +343,7 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun resetToDefault(packId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val packDir = File(getProjectsDir(), packId)
             
             // Delete all texture files but keep manifest and metadata
             val manifestFile = File(packDir, "manifest.json")
@@ -340,7 +384,7 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun saveProject(packId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(texturePacksDir, packId)
+            val packDir = File(getProjectsDir(), packId)
             
             // Create backup directory
             val backupDir = File(packDir, "backup")
@@ -394,13 +438,13 @@ class TexturePackRepository(private val context: Context) {
     }
     
     private fun saveTexturePackMetadata(texturePack: TexturePack) {
-        val packDir = File(texturePacksDir, texturePack.id)
+        val packDir = File(getProjectsDir(), texturePack.id)
         val metadataFile = File(packDir, "metadata.json")
         metadataFile.writeText(gson.toJson(texturePack))
     }
     
     private fun getTexturePackById(packId: String): TexturePack? {
-        val metadataFile = File(File(texturePacksDir, packId), "metadata.json")
+        val metadataFile = File(File(getProjectsDir(), packId), "metadata.json")
         return if (metadataFile.exists()) {
             gson.fromJson(metadataFile.readText(), TexturePack::class.java)
         } else null
