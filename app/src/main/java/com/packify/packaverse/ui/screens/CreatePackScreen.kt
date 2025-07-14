@@ -1,7 +1,7 @@
 package com.packify.packaverse.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -121,7 +121,7 @@ fun CreatePackScreen(
                     containerColor = Color(0xFFFFB6C1),
                     contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(28.dp),
+                shape = CircleShape,
                 enabled = !isLoading && packName.isNotBlank()
             ) {
                 if (isLoading) {

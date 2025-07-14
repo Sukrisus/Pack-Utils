@@ -1,7 +1,7 @@
 package com.packify.packaverse.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -139,7 +139,7 @@ fun ActionButton(
             containerColor = Color(0xFFFFB6C1), // Light pink color
             contentColor = Color.White
         ),
-        shape = RoundedCornerShape(28.dp)
+        shape = CircleShape
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -185,7 +185,7 @@ fun CategoryGridScreen(
                     modifier = Modifier
                         .aspectRatio(1f)
                         .clickable { onTextureClick(texture) },
-                    shape = RoundedCornerShape(8.dp)
+                    shape = CircleShape
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -259,7 +259,7 @@ fun BaseTextureLibraryScreen(
                         modifier = Modifier
                             .aspectRatio(1f)
                             .clickable { onTextureSelected(fileName) },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = CircleShape
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),

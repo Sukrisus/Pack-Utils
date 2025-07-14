@@ -447,8 +447,8 @@ fun AdvancedToolbar(
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .background(selectedColor, RoundedCornerShape(8.dp))
-                                .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                                .background(selectedColor, CircleShape)
+                                .border(2.dp, MaterialTheme.colorScheme.outline, CircleShape)
                                 .clickable { onColorPickerClicked() }
                         )
                     }
@@ -480,7 +480,7 @@ fun AdvancedToolButton(
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = CircleShape
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -522,7 +522,7 @@ fun BrushShapeButton(
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = RoundedCornerShape(6.dp)
+        shape = CircleShape
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -865,7 +865,7 @@ fun AdvancedColorPalette(
                         containerColor = Color(0xFFFFB6C1),
                         contentColor = Color.White
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = CircleShape
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -922,8 +922,8 @@ fun AdvancedColorPickerDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp)
-                        .background(currentColor, RoundedCornerShape(8.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                        .background(currentColor, CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
