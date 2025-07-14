@@ -594,6 +594,7 @@ fun EnhancedTextureCanvas(
             modifier = Modifier
                 .width(with(density) { areaWidth.dp })
                 .height(with(density) { (bitmapHeight * scaleToFit).dp })
+                .align(Alignment.CenterHorizontally)
                 .graphicsLayer(
                     scaleX = scale * baseScale,
                     scaleY = scale * baseScale,
