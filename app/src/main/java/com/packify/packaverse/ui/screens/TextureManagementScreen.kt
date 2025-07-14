@@ -30,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
 import java.io.IOException
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.window.Dialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,23 +45,30 @@ fun TextureManagementScreen(
     val context = LocalContext.current
     val textures by viewModel.textures.collectAsState()
     val categoryTextures = textures.filter { it.category == category }
-    
+
+    // State for which texture to replace
+    var textureToReplace by remember { mutableStateOf<TextureItem?>(null) }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { 
-            viewModel.addTexture(packId, category, uri)
+        uri?.let {
+            val texture = textureToReplace
+            if (texture != null) {
+                viewModel.replaceTexture(packId, texture.mcpePath, it)
+                textureToReplace = null
+            }
         }
     }
-    
+
     LaunchedEffect(category) {
         viewModel.loadTextures(packId, category)
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = "${category.displayName} Textures",
                         fontSize = 20.sp,
@@ -115,9 +123,9 @@ fun TextureManagementScreen(
                         tint = Color(0xFFFFB6C1),
                         modifier = Modifier.size(32.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.width(16.dp))
-                    
+
                     Column {
                         Text(
                             text = category.displayName,
@@ -131,9 +139,9 @@ fun TextureManagementScreen(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
-                    
+
                     Button(
                         onClick = { imagePickerLauncher.launch("image/*") },
                         colors = ButtonDefaults.buttonColors(
@@ -148,9 +156,9 @@ fun TextureManagementScreen(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Texture Grid
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
@@ -178,7 +186,12 @@ fun TextureManagementScreen(
                 items(categoryTextures) { texture ->
                     TextureGridItem(
                         texture = texture,
-                        onClick = { onTextureSelected(texture) }
+                        onClick = { onTextureSelected(texture) },
+                        onEdit = { /* Stub for edit */ },
+                        onImportFromGallery = {
+                            textureToReplace = texture
+                            imagePickerLauncher.launch("image/*")
+                        }
                     )
                 }
             }
@@ -189,8 +202,11 @@ fun TextureManagementScreen(
 @Composable
 fun TextureGridItem(
     texture: TextureItem,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEdit: () -> Unit = {},
+    onImportFromGallery: () -> Unit = {}
 ) {
+    var showDialog by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .size(80.dp)
@@ -218,8 +234,6 @@ fun TextureGridItem(
                 contentScale = ContentScale.Crop,
                 filterQuality = androidx.compose.ui.graphics.FilterQuality.None
             )
-            
-            // Overlay for custom textures
             if (texture.isCustom) {
                 Box(
                     modifier = Modifier
@@ -229,17 +243,47 @@ fun TextureGridItem(
                             CircleShape
                         )
                 )
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Custom texture",
-                    tint = Color.White,
+                IconButton(
+                    onClick = { showDialog = true },
                     modifier = Modifier
-                        .size(16.dp)
                         .align(Alignment.TopEnd)
-                        .padding(2.dp)
-                )
+                        .size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = Color.White
+                    )
+                }
             }
         }
+    }
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Texture Options") },
+            text = {
+                Column {
+                    Button(onClick = {
+                        showDialog = false
+                        onEdit()
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Edit")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = {
+                        showDialog = false
+                        onImportFromGallery()
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Import from Gallery")
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 }
 
