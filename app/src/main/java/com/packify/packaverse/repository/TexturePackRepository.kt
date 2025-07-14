@@ -132,11 +132,7 @@ class TexturePackRepository(private val context: Context) {
             val projectsDir = getProjectsDir()
             val packDir = File(projectsDir, packId)
             val categoryDir = File(packDir, category.mcpePath)
-            
-            // First, load base textures from assets
-            val baseTextures = loadBaseTextures(category)
-            
-            // Then, load custom textures from pack directory
+            // Only load custom textures from pack directory
             val customTextures = if (categoryDir.exists()) {
                 categoryDir.listFiles()?.filter { it.isFile && it.extension.lowercase() in listOf("png", "jpg", "jpeg") }
                     ?.map { file ->
@@ -151,9 +147,8 @@ class TexturePackRepository(private val context: Context) {
             } else {
                 emptyList()
             }
-            
-            // Combine base and custom textures
-            baseTextures + customTextures
+            // Do NOT add base textures from assets
+            customTextures
         } catch (e: Exception) {
             emptyList()
         }
