@@ -1,5 +1,6 @@
 package com.packify.packaverse.ui.screens
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.packify.packaverse.data.TexturePack
 import com.packify.packaverse.viewmodel.TexturePackViewModel
+import androidx.core.content.FileProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,6 +78,8 @@ fun EditPackScreen(
             viewModel.exportTexturePack(packId, it)
         }
     }
+    
+    val context = LocalContext.current
     
     Scaffold(
         topBar = {
@@ -436,9 +440,26 @@ fun EditPackScreen(
                         }
                         
                         Button(
-                            onClick = { 
-                                // Share functionality - will be implemented
-                                viewModel.clearMessages()
+                            onClick = {
+                                // Export the pack to a temporary file, then share it
+                                val exportFile = java.io.File(context.cacheDir, "${texturePack.name}.mcpack")
+                                viewModel.exportTexturePackToFile(packId, exportFile) { success ->
+                                    if (success) {
+                                        val uri = FileProvider.getUriForFile(
+                                            context,
+                                            context.packageName + ".provider",
+                                            exportFile
+                                        )
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "application/zip"
+                                            putExtra(Intent.EXTRA_STREAM, uri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(Intent.createChooser(shareIntent, "Share Texture Pack"))
+                                    } else {
+                                        viewModel.showError("Failed to export pack for sharing")
+                                    }
+                                }
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
