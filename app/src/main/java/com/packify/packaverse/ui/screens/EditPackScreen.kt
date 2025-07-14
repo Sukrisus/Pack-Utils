@@ -189,7 +189,8 @@ fun EditPackScreen(
                         onClick = { imagePickerLauncher.launch("image/*") },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            contentColor = Color.White
                         ),
                         enabled = !isLoading
                     ) {

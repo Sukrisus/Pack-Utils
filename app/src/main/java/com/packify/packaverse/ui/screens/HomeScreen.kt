@@ -74,7 +74,7 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(32.dp)
             ) {
                 Text(
-                    text = "MCPE Texture Pack Maker",
+                    text = "Packify",
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -137,7 +137,7 @@ fun ActionButton(
             .height(56.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFFFFB6C1), // Light pink color
-            contentColor = Color.Black
+            contentColor = Color.White
         ),
         shape = RoundedCornerShape(28.dp)
     ) {

@@ -168,7 +168,7 @@ fun ShareDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFFB6C1),
-                        contentColor = Color.Black
+                        contentColor = Color.White
                     )
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null)

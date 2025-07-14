@@ -202,7 +202,7 @@ fun SettingsScreen(
                     )
                     SettingsItem(
                         title = "Developer",
-                        subtitle = "MCPE Texture Pack Maker",
+                        subtitle = "Packify",
                         icon = Icons.Default.Person,
                         onClick = {}
                     )

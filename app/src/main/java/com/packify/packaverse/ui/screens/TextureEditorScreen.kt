@@ -863,7 +863,7 @@ fun AdvancedColorPalette(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFFB6C1),
-                        contentColor = Color.Black
+                        contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
