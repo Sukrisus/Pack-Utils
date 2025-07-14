@@ -44,6 +44,10 @@ import java.io.InputStream
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.unit.IntSize
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -582,26 +586,22 @@ fun EnhancedTextureCanvas(
                         offset += pan
                     }
                 }
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
                 .onGloballyPositioned { coordinates ->
                     canvasSize = coordinates.size.toSize()
                 }
                 .pointerInput(currentTool, brushSize, selectedColor, externalBitmap) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            lastPoint = offset
-                            drawingPoints = listOf(offset)
+                            val canvasCenter = Offset(size.width / 2f, size.height / 2f)
+                            lastPoint = (offset - canvasCenter) / scale
+                            drawingPoints = listOf((offset - canvasCenter) / scale)
                             path.reset()
-                            path.moveTo(offset.x, offset.y)
+                            path.moveTo((offset - canvasCenter).x / scale, (offset - canvasCenter).y / scale)
                         },
                         onDrag = { change, _ ->
                             change.consume()
-                            val newPoint = change.position
+                            val canvasCenter = Offset(size.width / 2f, size.height / 2f)
+                            val newPoint = (change.position - canvasCenter) / scale
                             drawingPoints = drawingPoints + newPoint
 
                             lastPoint?.let { last ->
@@ -660,98 +660,123 @@ fun EnhancedTextureCanvas(
                     )
                 }
         ) {
-            // Draw the bitmap as the background, pixel-accurate and filling the area
+            val canvasW = size.width
+            val canvasH = size.height
+            val baseScale = canvasW / bitmapWidth
+            val effectiveScale = baseScale * scale
+            val imageW = bitmapWidth * effectiveScale
+            val imageH = bitmapHeight * effectiveScale
+            val centerX = canvasW / 2f + offset.x
+            val centerY = canvasH / 2f + offset.y
+            val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
+
+            // Draw the bitmap, pixel-accurate, filling the width, zoomable and pannable
             canvasBitmap?.let { bmp ->
                 drawImage(
                     image = bmp.asImageBitmap(),
-                    topLeft = Offset.Zero,
+                    topLeft = topLeft,
                     alpha = 1f
                 )
             }
-            // Draw the current path
+            // Draw the current path (apply same transform)
             when (currentTool) {
-                EditorTool.BRUSH, EditorTool.PENCIL -> {
-                    drawPath(
-                        path = androidx.compose.ui.graphics.Path().apply {
-                            addPath(path.asComposePath())
-                        },
-                        color = selectedColor.copy(alpha = opacity),
-                        style = Stroke(
-                            width = brushSize,
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round
-                        )
-                    )
-                }
-                EditorTool.ERASER -> {
-                    drawPath(
-                        path = androidx.compose.ui.graphics.Path().apply {
-                            addPath(path.asComposePath())
-                        },
-                        color = Color.Transparent,
-                        style = Stroke(
-                            width = brushSize,
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round
-                        ),
-                        blendMode = BlendMode.Clear
-                    )
-                }
-                EditorTool.SPRAY_PAINT -> {
-                    drawingPoints.forEach { point ->
-                        repeat(3) {
-                            val randomX = point.x + (Math.random() - 0.5).toFloat() * brushSize / 2
-                            val randomY = point.y + (Math.random() - 0.5).toFloat() * brushSize / 2
-                            drawCircle(
-                                color = selectedColor.copy(alpha = opacity * 0.3f),
-                                radius = 2f,
-                                center = Offset(randomX, randomY)
-                            )
+                EditorTool.BRUSH, EditorTool.PENCIL, EditorTool.ERASER, EditorTool.SPRAY_PAINT -> {
+                    withTransform({
+                        translate(centerX - imageW / 2f, centerY - imageH / 2f)
+                        scale(effectiveScale, effectiveScale)
+                    }) {
+                        when (currentTool) {
+                            EditorTool.BRUSH, EditorTool.PENCIL -> {
+                                drawPath(
+                                    path = androidx.compose.ui.graphics.Path().apply {
+                                        addPath(path.asComposePath())
+                                    },
+                                    color = selectedColor.copy(alpha = opacity),
+                                    style = Stroke(
+                                        width = brushSize,
+                                        cap = StrokeCap.Round,
+                                        join = StrokeJoin.Round
+                                    )
+                                )
+                            }
+                            EditorTool.ERASER -> {
+                                drawPath(
+                                    path = androidx.compose.ui.graphics.Path().apply {
+                                        addPath(path.asComposePath())
+                                    },
+                                    color = Color.Transparent,
+                                    style = Stroke(
+                                        width = brushSize,
+                                        cap = StrokeCap.Round,
+                                        join = StrokeJoin.Round
+                                    ),
+                                    blendMode = BlendMode.Clear
+                                )
+                            }
+                            EditorTool.SPRAY_PAINT -> {
+                                drawingPoints.forEach { point ->
+                                    repeat(3) {
+                                        val randomX = point.x + (Math.random() - 0.5).toFloat() * brushSize / 2
+                                        val randomY = point.y + (Math.random() - 0.5).toFloat() * brushSize / 2
+                                        drawCircle(
+                                            color = selectedColor.copy(alpha = opacity * 0.3f),
+                                            radius = 2f,
+                                            center = Offset(randomX, randomY)
+                                        )
+                                    }
+                                }
+                            }
+                            else -> {}
                         }
                     }
                 }
                 else -> {}
             }
-            // Draw brush preview
+            // Draw brush preview (apply same transform)
             lastPoint?.let { point ->
-                when (brushShape) {
-                    BrushShape.ROUND -> {
-                        drawCircle(
-                            color = selectedColor.copy(alpha = 0.3f),
-                            radius = brushSize / 2,
-                            center = point,
-                            style = Stroke(width = 2f)
-                        )
-                    }
-                    BrushShape.SQUARE -> {
-                        drawRect(
-                            color = selectedColor.copy(alpha = 0.3f),
-                            topLeft = Offset(point.x - brushSize / 2, point.y - brushSize / 2),
-                            size = androidx.compose.ui.geometry.Size(brushSize, brushSize),
-                            style = Stroke(width = 2f)
-                        )
-                    }
-                    BrushShape.DIAMOND -> {
-                        val path = androidx.compose.ui.graphics.Path().apply {
-                            moveTo(point.x, point.y - brushSize / 2)
-                            lineTo(point.x + brushSize / 2, point.y)
-                            lineTo(point.x, point.y + brushSize / 2)
-                            lineTo(point.x - brushSize / 2, point.y)
-                            close()
+                withTransform({
+                    translate(centerX - imageW / 2f, centerY - imageH / 2f)
+                    scale(effectiveScale, effectiveScale)
+                }) {
+                    when (brushShape) {
+                        BrushShape.ROUND -> {
+                            drawCircle(
+                                color = selectedColor.copy(alpha = 0.3f),
+                                radius = brushSize / 2,
+                                center = point,
+                                style = Stroke(width = 2f)
+                            )
                         }
-                        drawPath(
-                            path = path,
-                            color = selectedColor.copy(alpha = 0.3f),
-                            style = Stroke(width = 2f)
-                        )
-                    }
-                    BrushShape.STAR -> {
-                        drawCircle(
-                            color = selectedColor.copy(alpha = 0.3f),
-                            radius = brushSize / 2,
-                            center = point,
-                            style = Stroke(width = 2f)
-                        )
+                        BrushShape.SQUARE -> {
+                            drawRect(
+                                color = selectedColor.copy(alpha = 0.3f),
+                                topLeft = Offset(point.x - brushSize / 2, point.y - brushSize / 2),
+                                size = androidx.compose.ui.geometry.Size(brushSize, brushSize),
+                                style = Stroke(width = 2f)
+                            )
+                        }
+                        BrushShape.DIAMOND -> {
+                            val path = androidx.compose.ui.graphics.Path().apply {
+                                moveTo(point.x, point.y - brushSize / 2)
+                                lineTo(point.x + brushSize / 2, point.y)
+                                lineTo(point.x, point.y + brushSize / 2)
+                                lineTo(point.x - brushSize / 2, point.y)
+                                close()
+                            }
+                            drawPath(
+                                path = path,
+                                color = selectedColor.copy(alpha = 0.3f),
+                                style = Stroke(width = 2f)
+                            )
+                        }
+                        BrushShape.STAR -> {
+                            drawCircle(
+                                color = selectedColor.copy(alpha = 0.3f),
+                                radius = brushSize / 2,
+                                center = point,
+                                style = Stroke(width = 2f)
+                            )
+                        }
                     }
                 }
             }
