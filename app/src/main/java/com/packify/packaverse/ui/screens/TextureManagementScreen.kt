@@ -63,6 +63,22 @@ fun TextureManagementScreen(
         }
     }
 
+    val navController = navController
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+    var showAssetDialog by remember { mutableStateOf(false) }
+    var pendingAssetPath by remember { mutableStateOf<String?>(null) }
+
+    // Listen for asset selection from library
+    LaunchedEffect(Unit) {
+        savedStateHandle?.getLiveData<String>("selectedAssetPath")?.observeForever { assetPath ->
+            if (assetPath != null) {
+                pendingAssetPath = assetPath
+                showAssetDialog = true
+                savedStateHandle.remove<String>("selectedAssetPath")
+            }
+        }
+    }
+
     LaunchedEffect(category) {
         viewModel.loadTextures(packId, category)
     }
@@ -201,6 +217,43 @@ fun TextureManagementScreen(
                 }
             }
         }
+    }
+    if (showAssetDialog && pendingAssetPath != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showAssetDialog = false
+                pendingAssetPath = null
+            },
+            title = { Text("Texture Options") },
+            text = {
+                Column {
+                    Button(onClick = {
+                        showAssetDialog = false
+                        pendingAssetPath = null
+                        // Add the asset as a new texture (import)
+                        val uri = Uri.parse(pendingAssetPath!!)
+                        viewModel.addTexture(packId, category, uri)
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Import from Library")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = {
+                        showAssetDialog = false
+                        pendingAssetPath = null
+                        // Optionally, you could trigger an edit flow here
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Edit")
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = {
+                    showAssetDialog = false
+                    pendingAssetPath = null
+                }) { Text("Cancel") }
+            }
+        )
     }
 }
 
