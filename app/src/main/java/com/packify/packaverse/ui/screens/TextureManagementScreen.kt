@@ -174,6 +174,7 @@ fun TextureManagementScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
+                // Only the + button as the first item
                 item {
                     Box(
                         modifier = Modifier
@@ -191,6 +192,7 @@ fun TextureManagementScreen(
                         )
                     }
                 }
+                // Only show actual textures, no placeholders
                 items(categoryTextures) { texture ->
                     TextureGridItem(
                         texture = texture,
