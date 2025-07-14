@@ -226,7 +226,8 @@ fun PackifyApp() {
                     },
                     onOpenLibrary = { folderPath ->
                         navController.navigate("library/${folderPath.replace("/", "_")}")
-                    }
+                    },
+                    navController = navController
                 )
             }
         }

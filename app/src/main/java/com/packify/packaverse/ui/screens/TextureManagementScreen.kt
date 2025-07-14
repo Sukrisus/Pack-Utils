@@ -31,6 +31,7 @@ import androidx.compose.foundation.background
 import java.io.IOException
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +41,8 @@ fun TextureManagementScreen(
     viewModel: TexturePackViewModel,
     onNavigateBack: () -> Unit,
     onTextureSelected: (TextureItem) -> Unit,
-    onOpenLibrary: (String) -> Unit // new callback for opening the library
+    onOpenLibrary: (String) -> Unit, // new callback for opening the library
+    navController: NavController
 ) {
     val context = LocalContext.current
     val textures by viewModel.textures.collectAsState()
@@ -187,7 +189,10 @@ fun TextureManagementScreen(
                     TextureGridItem(
                         texture = texture,
                         onClick = { onTextureSelected(texture) },
-                        onEdit = { /* Stub for edit */ },
+                        onEdit = {
+                            // Navigate to the editor screen for this texture
+                            navController.navigate("texture_editor/$packId/${texture.name}")
+                        },
                         onImportFromGallery = {
                             textureToReplace = texture
                             imagePickerLauncher.launch("image/*")
