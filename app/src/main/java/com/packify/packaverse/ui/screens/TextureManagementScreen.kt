@@ -36,7 +36,8 @@ fun TextureManagementScreen(
     packId: String,
     viewModel: TexturePackViewModel,
     onNavigateBack: () -> Unit,
-    onTextureSelected: (TextureItem) -> Unit
+    onTextureSelected: (TextureItem) -> Unit,
+    onOpenLibrary: (String) -> Unit // new callback for opening the library
 ) {
     val context = LocalContext.current
     val textures by viewModel.textures.collectAsState()
@@ -70,7 +71,7 @@ fun TextureManagementScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
+                    IconButton(onClick = { onOpenLibrary("base/${category.name.lowercase()}/") }) {
                         Icon(Icons.Default.Add, contentDescription = "Add Texture")
                     }
                 },
@@ -161,7 +162,7 @@ fun TextureManagementScreen(
                             .size(80.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color(0xFFFFB6C1).copy(alpha = 0.3f))
-                            .clickable { imagePickerLauncher.launch("image/*") },
+                            .clickable { onOpenLibrary("base/${category.name.lowercase()}/") },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -236,6 +237,29 @@ fun TextureGridItem(
                         .padding(2.dp)
                 )
             }
+        }
+    }
+}
+
+// Stub for the new LibraryScreen composable
+@Composable
+fun LibraryScreen(folderPath: String, onImageSelected: (String) -> Unit, onNavigateBack: () -> Unit) {
+    // TODO: Implement logic to list all images in the given folderPath and display them in a 4-column grid
+    // For now, just show a placeholder
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Select Image from $folderPath") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+            Text("Library grid for $folderPath goes here")
         }
     }
 }

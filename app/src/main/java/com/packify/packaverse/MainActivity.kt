@@ -223,9 +223,20 @@ fun PackifyApp() {
                     onNavigateBack = { navController.popBackStack() },
                     onTextureSelected = { texture ->
                         navController.navigate("texture_editor/$packId/${texture.name}")
+                    },
+                    onOpenLibrary = { folderPath ->
+                        navController.navigate("library/${folderPath.replace("/", "_")}")
                     }
                 )
             }
+        }
+        composable("library/{folderPath}") { backStackEntry ->
+            val folderPath = backStackEntry.arguments?.getString("folderPath")?.replace("_", "/") ?: ""
+            com.packify.packaverse.ui.screens.LibraryScreen(
+                folderPath = folderPath,
+                onImageSelected = { /* TODO: handle image selection */ },
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }
