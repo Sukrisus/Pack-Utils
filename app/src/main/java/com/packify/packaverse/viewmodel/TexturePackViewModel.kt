@@ -392,4 +392,17 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
     fun isUsingExternalStorage(): Boolean {
         return hasStoragePermission()
     }
+
+    fun exportTexturePackToFile(packId: String, file: java.io.File, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val outputStream = java.io.FileOutputStream(file)
+                repository.exportTexturePack(packId, Uri.fromFile(file))
+                outputStream.close()
+                onResult(true)
+            } catch (e: Exception) {
+                onResult(false)
+            }
+        }
+    }
 }
