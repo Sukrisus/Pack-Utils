@@ -562,41 +562,28 @@ fun EnhancedTextureCanvas(
 
     val bitmapWidth = canvasBitmap?.width ?: 64
     val bitmapHeight = canvasBitmap?.height ?: 64
-    val widthDp = with(density) { bitmapWidth.toDp() }
-    val heightDp = with(density) { bitmapHeight.toDp() }
+    val aspectRatio = bitmapWidth.toFloat() / bitmapHeight.toFloat()
 
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
-    val minDisplaySizeDp = 256.dp
-    val minDisplayPx = with(density) { minDisplaySizeDp.roundToPx() }
-    val displayWidthPx = maxOf(bitmapWidth, minDisplayPx)
-    val displayHeightPx = maxOf(bitmapHeight, minDisplayPx)
-    val displayWidthDp = with(density) { displayWidthPx.toDp() }
-    val displayHeightDp = with(density) { displayHeightPx.toDp() }
-
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.8f)
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(0.5f, 16f)
-                    offset += pan
-                }
-            },
+    Box(
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        val areaWidth = constraints.maxWidth.toFloat() / density.density
-        val scaleToFit = areaWidth / bitmapWidth
-        val baseScale = scaleToFit
         Canvas(
             modifier = Modifier
-                .width(with(density) { areaWidth.dp })
-                .height(with(density) { (bitmapHeight * scaleToFit).dp })
+                .fillMaxWidth()
+                .aspectRatio(aspectRatio)
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        scale = (scale * zoom).coerceIn(0.5f, 16f)
+                        offset += pan
+                    }
+                }
                 .graphicsLayer(
-                    scaleX = scale * baseScale,
-                    scaleY = scale * baseScale,
+                    scaleX = scale,
+                    scaleY = scale,
                     translationX = offset.x,
                     translationY = offset.y
                 )
@@ -677,7 +664,8 @@ fun EnhancedTextureCanvas(
                 drawImage(
                     image = bmp.asImageBitmap(),
                     topLeft = Offset.Zero,
-                    alpha = 1f
+                    alpha = 1f,
+                    filterQuality = FilterQuality.None // Pixelated rendering
                 )
             }
             // Draw the current path
