@@ -59,6 +59,9 @@ fun TextureManagementScreen(
             if (texture != null) {
                 viewModel.replaceTexture(packId, texture.mcpePath, it)
                 textureToReplace = null
+            } else {
+                // Add new texture if not replacing
+                viewModel.addTexture(packId, category, it)
             }
         }
     }
