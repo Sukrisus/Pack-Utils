@@ -251,6 +251,19 @@ fun TextureEditorScreen(
                     },
                     externalBitmap = canvasBitmap
                 )
+                // Add color palette below the canvas
+                var customColors by remember { mutableStateOf(listOf<Color>()) }
+                ColorPalette(
+                    selectedColor = selectedColor,
+                    onColorSelected = { selectedColor = it },
+                    customColors = customColors,
+                    onAddCustomColor = { color ->
+                        if (!customColors.contains(color)) {
+                            customColors = customColors + color
+                        }
+                        selectedColor = color
+                    }
+                )
             }
         }
         // Color picker dialog
