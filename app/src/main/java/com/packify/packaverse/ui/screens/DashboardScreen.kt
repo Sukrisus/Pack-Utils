@@ -7,7 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -101,7 +101,7 @@ fun DashboardScreen(
                         .clickable {
                             selectedPack?.let { onNavigateToCategory(category) }
                         },
-                    shape = MaterialTheme.shapes.large,
+                    shape = CircleShape,
                     colors = CardDefaults.elevatedCardColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
@@ -168,7 +168,7 @@ fun ShareDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFFB6C1),
-                        contentColor = Color.Black
+                        contentColor = Color.White
                     )
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null)

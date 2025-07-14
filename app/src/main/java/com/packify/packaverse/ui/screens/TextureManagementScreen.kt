@@ -32,8 +32,11 @@ import java.io.IOException
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TextureManagementScreen(
     category: TextureCategory,
@@ -68,16 +71,16 @@ fun TextureManagementScreen(
 
     val navController = navController
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    var showAssetDialog by remember { mutableStateOf(false) }
-    var pendingAssetPath by remember { mutableStateOf<String?>(null) }
     var navigateToTextureName by remember { mutableStateOf<String?>(null) }
 
     // Listen for asset selection from library
     LaunchedEffect(Unit) {
         savedStateHandle?.getLiveData<String>("selectedAssetPath")?.observeForever { assetPath ->
             if (assetPath != null) {
-                pendingAssetPath = assetPath
-                showAssetDialog = true
+                // Add the asset as a new texture immediately
+                val uri = Uri.parse(assetPath)
+                viewModel.addTexture(packId, category, uri)
+                viewModel.loadTextures(packId, category)
                 savedStateHandle.remove<String>("selectedAssetPath")
             }
         }
@@ -86,6 +89,9 @@ fun TextureManagementScreen(
     LaunchedEffect(category) {
         viewModel.loadTextures(packId, category)
     }
+
+    val selectedTextures = remember { mutableStateListOf<TextureItem>() }
+    var selectionMode by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -102,8 +108,21 @@ fun TextureManagementScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onOpenLibrary("base/${category.name.lowercase()}/") }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Texture")
+                    if (selectionMode && selectedTextures.isNotEmpty()) {
+                        IconButton(onClick = {
+                            selectedTextures.forEach { texture ->
+                                viewModel.deleteTexture(packId, category, texture)
+                            }
+                            selectedTextures.clear()
+                            selectionMode = false
+                            viewModel.loadTextures(packId, category)
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Selected")
+                        }
+                    } else {
+                        IconButton(onClick = { onOpenLibrary("base/${category.name.lowercase()}/") }) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Texture")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -120,66 +139,13 @@ fun TextureManagementScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header with category info
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = when (category) {
-                            TextureCategory.BLOCKS -> Icons.Default.ViewInAr
-                            TextureCategory.ITEMS -> Icons.Default.Inventory
-                            TextureCategory.ENTITY -> Icons.Default.Person
-                            TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
-                            TextureCategory.GUI -> Icons.Default.Dashboard
-                            TextureCategory.PARTICLE -> Icons.Default.Star
-                            TextureCategory.MISC -> Icons.Default.MoreVert
-                        },
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = category.displayName,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "${categoryTextures.size} textures",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    FilledTonalButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add Texture")
-                    }
-                }
-            }
             // Texture Grid
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Only the + button as the first item
-                item {
+            if (categoryTextures.isEmpty()) {
+                // Centered plus icon only
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Box(
                         modifier = Modifier
                             .size(80.dp)
@@ -196,66 +162,65 @@ fun TextureManagementScreen(
                         )
                     }
                 }
-                // Only show actual textures, no placeholders
-                items(categoryTextures) { texture ->
-                    TextureGridItem(
-                        texture = texture,
-                        onClick = { onTextureSelected(texture) },
-                        onEdit = {
-                            navController.navigate("texture_editor/$packId/${texture.name}")
-                        },
-                        onImportFromGallery = {
-                            textureToReplace = texture
-                            imagePickerLauncher.launch("image/*")
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // Only the + button as the first item
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .clickable { onOpenLibrary("base/${category.name.lowercase()}/") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Texture",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(40.dp)
+                            )
                         }
-                    )
+                    }
+                    // Only show actual textures, no placeholders
+                    items(categoryTextures) { texture ->
+                        val isSelected = selectedTextures.contains(texture)
+                        TextureGridItem(
+                            texture = texture,
+                            isSelected = isSelected,
+                            selectionMode = selectionMode,
+                            onClick = {
+                                if (selectionMode) {
+                                    if (isSelected) selectedTextures.remove(texture)
+                                    else selectedTextures.add(texture)
+                                    if (selectedTextures.isEmpty()) selectionMode = false
+                                } else {
+                                    onTextureSelected(texture)
+                                }
+                            },
+                            onLongPress = {
+                                if (!selectionMode) {
+                                    selectionMode = true
+                                    selectedTextures.add(texture)
+                                }
+                            },
+                            onEdit = {
+                                navController.navigate("texture_editor/$packId/${texture.name}")
+                            },
+                            onImportFromGallery = {
+                                textureToReplace = texture
+                                imagePickerLauncher.launch("image/*")
+                            }
+                        )
+                    }
                 }
             }
         }
-    }
-    if (showAssetDialog && pendingAssetPath != null) {
-        AlertDialog(
-            onDismissRequest = {
-                showAssetDialog = false
-                pendingAssetPath = null
-            },
-            title = { Text("Texture Options") },
-            text = {
-                Column {
-                    Button(onClick = {
-                        showAssetDialog = false
-                        // Launch image picker to import from device and replace the texture image
-                        textureToReplace = null // No existing texture, so just import
-                        imagePickerLauncher.launch("image/*")
-                        pendingAssetPath = null
-                    }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Import from Device")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = {
-                        showAssetDialog = false
-                        // Add the asset as a new texture
-                        val uri = Uri.parse(pendingAssetPath!!)
-                        viewModel.addTexture(packId, category, uri)
-                        // Reload textures and set navigation target
-                        viewModel.loadTextures(packId, category)
-                        val fileName = pendingAssetPath!!.substringAfterLast('/')
-                        val textureName = fileName.substringBeforeLast('.')
-                        navigateToTextureName = textureName
-                        pendingAssetPath = null
-                    }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Edit")
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = {
-                    showAssetDialog = false
-                    pendingAssetPath = null
-                }) { Text("Cancel") }
-            }
-        )
     }
     // Navigation effect for new texture
     LaunchedEffect(navigateToTextureName, viewModel.textures.value) {
@@ -270,11 +235,14 @@ fun TextureManagementScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TextureGridItem(
     texture: TextureItem,
+    isSelected: Boolean = false,
+    selectionMode: Boolean = false,
     onClick: () -> Unit,
+    onLongPress: () -> Unit = {},
     onEdit: () -> Unit = {},
     onImportFromGallery: () -> Unit = {}
 ) {
@@ -282,11 +250,15 @@ fun TextureGridItem(
     Card(
         modifier = Modifier
             .size(80.dp)
-            .clickable { onClick() },
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongPress
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -305,7 +277,21 @@ fun TextureGridItem(
                 contentScale = ContentScale.Crop,
                 filterQuality = androidx.compose.ui.graphics.FilterQuality.None
             )
-            if (texture.isCustom) {
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            } else if (texture.isCustom) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

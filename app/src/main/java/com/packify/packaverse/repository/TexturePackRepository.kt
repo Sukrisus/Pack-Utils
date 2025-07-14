@@ -61,15 +61,20 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
+    private fun sanitizeNameForFolder(name: String): String {
+        return name.trim().replace(Regex("[^a-zA-Z0-9_ -]"), "_").replace(" ", "_")
+    }
+    
     suspend fun createTexturePack(name: String, description: String): Result<TexturePack> = withContext(Dispatchers.IO) {
         try {
+            val sanitized = sanitizeNameForFolder(name)
             val texturePack = TexturePack(
+                id = sanitized,
                 name = name,
                 description = description
             )
-            
             val projectsDir = getProjectsDir()
-            val packDir = File(projectsDir, texturePack.id)
+            val packDir = File(projectsDir, sanitized)
             packDir.mkdirs()
             
             // Create manifest.json
@@ -91,7 +96,6 @@ class TexturePackRepository(private val context: Context) {
                 File(packDir, category.mcpePath).mkdirs()
             }
             
-            // No metadata.json creation
             Result.success(texturePack)
         } catch (e: Exception) {
             Result.failure(e)
@@ -103,12 +107,18 @@ class TexturePackRepository(private val context: Context) {
             val projectsDir = getProjectsDir()
             projectsDir.listFiles()?.mapNotNull { dir ->
                 if (dir.isDirectory) {
-                    // Only use manifest.json or directory name for pack info
                     val manifestFile = File(dir, "manifest.json")
                     if (manifestFile.exists()) {
-                        // You may want to parse manifest.json here if needed
-                        // For now, just return a TexturePack with directory name
-                        TexturePack(name = dir.name, description = "")
+                        try {
+                            val manifest = gson.fromJson(manifestFile.readText(), Manifest::class.java)
+                            TexturePack(
+                                id = dir.name,
+                                name = manifest.header.name,
+                                description = manifest.header.description
+                            )
+                        } catch (e: Exception) {
+                            null
+                        }
                     } else null
                 } else null
             } ?: emptyList()
@@ -122,11 +132,7 @@ class TexturePackRepository(private val context: Context) {
             val projectsDir = getProjectsDir()
             val packDir = File(projectsDir, packId)
             val categoryDir = File(packDir, category.mcpePath)
-            
-            // First, load base textures from assets
-            val baseTextures = loadBaseTextures(category)
-            
-            // Then, load custom textures from pack directory
+            // Only load custom textures from pack directory
             val customTextures = if (categoryDir.exists()) {
                 categoryDir.listFiles()?.filter { it.isFile && it.extension.lowercase() in listOf("png", "jpg", "jpeg") }
                     ?.map { file ->
@@ -141,9 +147,8 @@ class TexturePackRepository(private val context: Context) {
             } else {
                 emptyList()
             }
-            
-            // Combine base and custom textures
-            baseTextures + customTextures
+            // Do NOT add base textures from assets
+            customTextures
         } catch (e: Exception) {
             emptyList()
         }
@@ -317,9 +322,10 @@ class TexturePackRepository(private val context: Context) {
     
     suspend fun updateManifest(packId: String, name: String, description: String, version: List<Int>, minEngineVersion: List<Int> = listOf(1, 16, 0)): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val packDir = File(getProjectsDir(), packId)
+            val projectsDir = getProjectsDir()
+            val packDir = File(projectsDir, packId)
             val manifestFile = File(packDir, "manifest.json")
-            
+            var newPackDir = packDir
             if (manifestFile.exists()) {
                 val currentManifest = gson.fromJson(manifestFile.readText(), Manifest::class.java)
                 val updatedManifest = currentManifest.copy(
@@ -330,21 +336,17 @@ class TexturePackRepository(private val context: Context) {
                         minEngineVersion = minEngineVersion
                     )
                 )
-                
                 manifestFile.writeText(gson.toJson(updatedManifest))
-                
-                // Update metadata
-                // val texturePack = getTexturePackById(packId) // Removed
-                // texturePack?.let { // Removed
-                //     saveTexturePackMetadata(it.copy( // Removed
-                //         name = name, // Removed
-                //         description = description, // Removed
-                //         version = version, // Removed
-                //         modifiedAt = System.currentTimeMillis() // Removed
-                //     )) // Removed
-                // } // Removed
+                // If the name changed, rename the folder
+                val sanitized = sanitizeNameForFolder(name)
+                if (packDir.name != sanitized) {
+                    val targetDir = File(projectsDir, sanitized)
+                    if (!targetDir.exists()) {
+                        packDir.renameTo(targetDir)
+                        newPackDir = targetDir
+                    }
+                }
             }
-            
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -407,6 +409,14 @@ class TexturePackRepository(private val context: Context) {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+    
+    suspend fun deleteTexture(packId: String, category: TextureCategory, texture: TextureItem) = withContext(Dispatchers.IO) {
+        val projectsDir = getProjectsDir()
+        val packDir = File(projectsDir, packId)
+        val categoryDir = File(packDir, category.mcpePath)
+        val file = File(categoryDir, texture.name + ".png")
+        if (file.exists()) file.delete()
     }
     
     private fun addFolderToZip(folder: File, parentPath: String, zipOut: ZipOutputStream) {
