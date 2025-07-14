@@ -574,17 +574,16 @@ fun EnhancedTextureCanvas(
 
     Card(
         modifier = Modifier
-            .width(displayWidthDp)
-            .height(displayHeightDp)
+            .fillMaxWidth()
+            .fillMaxHeight(0.8f)
             .padding(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
-                .width(displayWidthDp)
-                .height(displayHeightDp)
+                .fillMaxSize()
                 .padding(8.dp)
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
@@ -593,13 +592,16 @@ fun EnhancedTextureCanvas(
                     }
                 }
         ) {
+            val areaWidth = constraints.maxWidth.toFloat() / density.density
+            val areaHeight = constraints.maxHeight.toFloat() / density.density
+            val scaleToFit = minOf(areaWidth / bitmapWidth, areaHeight / bitmapHeight)
+            val baseScale = scaleToFit
             Canvas(
                 modifier = Modifier
-                    .width(displayWidthDp)
-                    .height(displayHeightDp)
+                    .fillMaxSize()
                     .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale,
+                        scaleX = scale * baseScale,
+                        scaleY = scale * baseScale,
                         translationX = offset.x,
                         translationY = offset.y
                     )
@@ -675,7 +677,7 @@ fun EnhancedTextureCanvas(
                         )
                     }
             ) {
-                // Draw checkerboard background for transparency, always matching the bitmap size
+                // Draw checkerboard background for transparency, always matching the bitmap size and filling the area
                 val checkerSize = 20f
                 val checkerColor1 = Color.White
                 val checkerColor2 = Color.LightGray
@@ -690,7 +692,7 @@ fun EnhancedTextureCanvas(
                         )
                     }
                 }
-                // Draw the bitmap as the background, pixel-accurate
+                // Draw the bitmap as the background, pixel-accurate and filling the area
                 canvasBitmap?.let { bmp ->
                     drawImage(
                         image = bmp.asImageBitmap(),
