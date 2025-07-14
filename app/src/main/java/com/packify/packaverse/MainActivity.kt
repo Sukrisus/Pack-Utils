@@ -37,15 +37,24 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import android.annotation.TargetApi
 import android.annotation.SuppressLint
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             PackifyTheme {
+                val backgroundColor = MaterialTheme.colorScheme.background
+                SideEffect {
+                    WindowCompat.setDecorFitsSystemWindows(window, false)
+                    window.statusBarColor = backgroundColor.toArgb()
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !isSystemInDarkTheme()
+                }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = backgroundColor
                 ) {
                     PackifyApp()
                 }
