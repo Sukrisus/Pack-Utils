@@ -172,14 +172,12 @@ fun TextureManagementScreen(
                 }
             }
             // Texture Grid
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Only the + button as the first item
-                item {
+            if (categoryTextures.isEmpty()) {
+                // Centered plus icon only
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Box(
                         modifier = Modifier
                             .size(80.dp)
@@ -196,19 +194,45 @@ fun TextureManagementScreen(
                         )
                     }
                 }
-                // Only show actual textures, no placeholders
-                items(categoryTextures) { texture ->
-                    TextureGridItem(
-                        texture = texture,
-                        onClick = { onTextureSelected(texture) },
-                        onEdit = {
-                            navController.navigate("texture_editor/$packId/${texture.name}")
-                        },
-                        onImportFromGallery = {
-                            textureToReplace = texture
-                            imagePickerLauncher.launch("image/*")
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    // Only the + button as the first item
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .clickable { onOpenLibrary("base/${category.name.lowercase()}/") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Texture",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(40.dp)
+                            )
                         }
-                    )
+                    }
+                    // Only show actual textures, no placeholders
+                    items(categoryTextures) { texture ->
+                        TextureGridItem(
+                            texture = texture,
+                            onClick = { onTextureSelected(texture) },
+                            onEdit = {
+                                navController.navigate("texture_editor/$packId/${texture.name}")
+                            },
+                            onImportFromGallery = {
+                                textureToReplace = texture
+                                imagePickerLauncher.launch("image/*")
+                            }
+                        )
+                    }
                 }
             }
         }
