@@ -264,7 +264,15 @@ class TexturePackRepository(private val context: Context) {
                         inputStream.copyTo(outputStream)
                     }
                 }
+            } else if (textureUri.scheme == "content" || textureUri.scheme == "file") {
+                // Copy the file directly to preserve resolution
+                context.contentResolver.openInputStream(textureUri)?.use { inputStream ->
+                    FileOutputStream(textureFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
             } else {
+                // Fallback: decode and re-encode as Bitmap (should rarely happen)
                 context.contentResolver.openInputStream(textureUri)?.use { inputStream ->
                     val bitmap = BitmapFactory.decodeStream(inputStream)
                     FileOutputStream(textureFile).use { outputStream ->
