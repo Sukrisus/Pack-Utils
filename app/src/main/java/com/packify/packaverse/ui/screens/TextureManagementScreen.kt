@@ -68,16 +68,16 @@ fun TextureManagementScreen(
 
     val navController = navController
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    var showAssetDialog by remember { mutableStateOf(false) }
-    var pendingAssetPath by remember { mutableStateOf<String?>(null) }
     var navigateToTextureName by remember { mutableStateOf<String?>(null) }
 
     // Listen for asset selection from library
     LaunchedEffect(Unit) {
         savedStateHandle?.getLiveData<String>("selectedAssetPath")?.observeForever { assetPath ->
             if (assetPath != null) {
-                pendingAssetPath = assetPath
-                showAssetDialog = true
+                // Add the asset as a new texture immediately
+                val uri = Uri.parse(assetPath)
+                viewModel.addTexture(packId, category, uri)
+                viewModel.loadTextures(packId, category)
                 savedStateHandle.remove<String>("selectedAssetPath")
             }
         }
@@ -236,50 +236,6 @@ fun TextureManagementScreen(
                 }
             }
         }
-    }
-    if (showAssetDialog && pendingAssetPath != null) {
-        AlertDialog(
-            onDismissRequest = {
-                showAssetDialog = false
-                pendingAssetPath = null
-            },
-            title = { Text("Texture Options") },
-            text = {
-                Column {
-                    Button(onClick = {
-                        showAssetDialog = false
-                        // Launch image picker to import from device and replace the texture image
-                        textureToReplace = null // No existing texture, so just import
-                        imagePickerLauncher.launch("image/*")
-                        pendingAssetPath = null
-                    }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Import from Device")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = {
-                        showAssetDialog = false
-                        // Add the asset as a new texture
-                        val uri = Uri.parse(pendingAssetPath!!)
-                        viewModel.addTexture(packId, category, uri)
-                        // Reload textures and set navigation target
-                        viewModel.loadTextures(packId, category)
-                        val fileName = pendingAssetPath!!.substringAfterLast('/')
-                        val textureName = fileName.substringBeforeLast('.')
-                        navigateToTextureName = textureName
-                        pendingAssetPath = null
-                    }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Edit")
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = {
-                    showAssetDialog = false
-                    pendingAssetPath = null
-                }) { Text("Cancel") }
-            }
-        )
     }
     // Navigation effect for new texture
     LaunchedEffect(navigateToTextureName, viewModel.textures.value) {
