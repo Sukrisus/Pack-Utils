@@ -1,6 +1,7 @@
 package com.packify.packaverse.ui.screens
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.toSize
 import com.packify.packaverse.data.TextureItem
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import kotlinx.coroutines.launch
+import java.io.InputStream
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -69,6 +71,24 @@ fun TextureEditorScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // Load the bitmap from the texture path on first composition
+    LaunchedEffect(texture.originalPath) {
+        if (canvasBitmap == null) {
+            val bmp: Bitmap? = try {
+                if (texture.originalPath.startsWith("asset://")) {
+                    val assetPath = texture.originalPath.removePrefix("asset://")
+                    val inputStream: InputStream = context.assets.open(assetPath)
+                    BitmapFactory.decodeStream(inputStream)
+                } else {
+                    BitmapFactory.decodeFile(texture.originalPath)
+                }
+            } catch (e: Exception) {
+                null
+            }
+            canvasBitmap = bmp?.copy(Bitmap.Config.ARGB_8888, true)
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
