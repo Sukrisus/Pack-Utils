@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -41,6 +42,7 @@ import com.packify.packaverse.viewmodel.TexturePackViewModel
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -547,6 +549,9 @@ fun EnhancedTextureCanvas(
     val widthDp = with(density) { bitmapWidth.toDp() }
     val heightDp = with(density) { bitmapHeight.toDp() }
 
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
     Card(
         modifier = Modifier
             .width(widthDp)
@@ -561,11 +566,23 @@ fun EnhancedTextureCanvas(
                 .width(widthDp)
                 .height(heightDp)
                 .padding(8.dp)
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        scale = (scale * zoom).coerceIn(0.5f, 16f)
+                        offset += pan
+                    }
+                }
         ) {
             Canvas(
                 modifier = Modifier
                     .width(widthDp)
                     .height(heightDp)
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offset.x,
+                        translationY = offset.y
+                    )
                     .onGloballyPositioned { coordinates ->
                         canvasSize = coordinates.size.toSize()
                     }
