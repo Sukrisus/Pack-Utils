@@ -236,7 +236,7 @@ class TexturePackRepository(private val context: Context) {
             val categoryDir = File(packDir, category.mcpePath)
             categoryDir.mkdirs()
 
-            // Use the original file name
+            // Always require the original file name
             val fileName = when {
                 textureUri.scheme == "asset" -> {
                     val assetPath = textureUri.toString().removePrefix("asset://")
@@ -254,6 +254,9 @@ class TexturePackRepository(private val context: Context) {
                     name ?: File(textureUri.path ?: "").name
                 }
                 else -> File(textureUri.path ?: "").name
+            }
+            if (fileName.isBlank()) {
+                return@withContext Result.failure(Exception("Could not determine file name for texture"))
             }
             val textureFile = File(categoryDir, fileName)
 
