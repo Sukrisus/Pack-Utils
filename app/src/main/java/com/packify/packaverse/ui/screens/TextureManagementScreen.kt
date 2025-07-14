@@ -220,7 +220,7 @@ fun TextureGridItem(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = CircleShape
+        shape = RoundedCornerShape(12.dp)
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -235,8 +235,7 @@ fun TextureGridItem(
                 contentDescription = texture.name,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(4.dp)
-                    .clip(CircleShape),
+                    .padding(4.dp),
                 contentScale = ContentScale.Crop,
                 filterQuality = androidx.compose.ui.graphics.FilterQuality.None
             )
@@ -246,7 +245,7 @@ fun TextureGridItem(
                         .fillMaxSize()
                         .background(
                             Color.Black.copy(alpha = 0.3f),
-                            CircleShape
+                            RoundedCornerShape(12.dp)
                         )
                 )
                 IconButton(
