@@ -146,7 +146,8 @@ fun PackListScreen(
                             pack = pack,
                             onEdit = { onEditPack(pack.id) },
                             onDelete = { viewModel.deleteTexturePack(pack.id) },
-                            onClearMessages = { viewModel.clearMessages() }
+                            onClearMessages = { viewModel.clearMessages() },
+                            isDeleting = isLoading // disables buttons while loading
                         )
                     }
                 }
@@ -160,7 +161,8 @@ fun TexturePackCard(
     pack: TexturePack,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onClearMessages: () -> Unit
+    onClearMessages: () -> Unit,
+    isDeleting: Boolean = false // Add this parameter
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
@@ -207,14 +209,14 @@ fun TexturePackCard(
                 }
                 
                 Row {
-                    IconButton(onClick = onEdit) {
+                    IconButton(onClick = { if (!isDeleting) onEdit() }, enabled = !isDeleting) {
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = "Edit",
                             tint = Color(0xFFFFB6C1)
                         )
                     }
-                    IconButton(onClick = { showDeleteDialog = true }) {
+                    IconButton(onClick = { if (!isDeleting) showDeleteDialog = true }, enabled = !isDeleting) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Delete",
@@ -237,13 +239,14 @@ fun TexturePackCard(
                         onDelete()
                         showDeleteDialog = false
                         onClearMessages()
-                    }
+                    },
+                    enabled = !isDeleting
                 ) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
+                TextButton(onClick = { showDeleteDialog = false }, enabled = !isDeleting) {
                     Text("Cancel")
                 }
             }
