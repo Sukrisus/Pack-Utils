@@ -406,50 +406,6 @@ class TexturePackRepository(private val context: Context) {
         }
     }
     
-    suspend fun saveProject(packId: String): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val packDir = File(getProjectsDir(), packId)
-            
-            // Create backup directory
-            val backupDir = File(packDir, "backup")
-            backupDir.mkdirs()
-            
-            // Create timestamp for backup
-            val timestamp = System.currentTimeMillis()
-            val backupFile = File(backupDir, "backup_$timestamp.zip")
-            
-            // Create backup zip
-            FileOutputStream(backupFile).use { outputStream ->
-                ZipOutputStream(outputStream).use { zipOut ->
-                    TextureCategory.values().forEach { category ->
-                        val categoryDir = File(packDir, category.mcpePath)
-                        if (categoryDir.exists()) {
-                            addFolderToZip(categoryDir, category.mcpePath, zipOut)
-                        }
-                    }
-                }
-            }
-            
-            // Update modification time
-            // val texturePack = getTexturePackById(packId) // Removed
-            // texturePack?.let { // Removed
-            //     saveTexturePackMetadata(it.copy( // Removed
-            //         modifiedAt = System.currentTimeMillis() // Removed
-            //     )) // Removed
-            // } // Removed
-            
-            // Clean up old backups (keep only last 5)
-            val backupFiles = backupDir.listFiles()?.sortedByDescending { it.lastModified() }
-            if (backupFiles != null && backupFiles.size > 5) {
-                backupFiles.drop(5).forEach { it.delete() }
-            }
-            
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
     private fun addFolderToZip(folder: File, parentPath: String, zipOut: ZipOutputStream) {
         folder.listFiles()?.forEach { file ->
             if (file.isDirectory) {

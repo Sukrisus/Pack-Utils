@@ -99,11 +99,6 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
                     _successMessage.value = "Texture replaced successfully!"
                     _hasUnsavedChanges.value = true
                     
-                    // Auto-save if enabled
-                    if (isAutoSaveEnabled()) {
-                        autoSaveCurrentProject()
-                    }
-                    
                     // Reload textures for the current category
                     val currentTextures = _textures.value
                     if (currentTextures.isNotEmpty()) {
@@ -127,11 +122,6 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
                 .onSuccess { 
                     _successMessage.value = "Texture added successfully!"
                     _hasUnsavedChanges.value = true
-                    
-                    // Auto-save if enabled
-                    if (isAutoSaveEnabled()) {
-                        autoSaveCurrentProject()
-                    }
                     
                     // Reload textures for the current category
                     loadTextures(packId, category)
@@ -178,11 +168,6 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
                     _successMessage.value = "Pack icon updated successfully!"
                     _hasUnsavedChanges.value = true
                     
-                    // Auto-save if enabled
-                    if (isAutoSaveEnabled()) {
-                        autoSaveCurrentProject()
-                    }
-                    
                     loadTexturePacks()
                 }
                 .onFailure { 
@@ -207,11 +192,6 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
                 .onSuccess { 
                     _successMessage.value = "Pack details updated successfully!"
                     _hasUnsavedChanges.value = true
-                    
-                    // Auto-save if enabled
-                    if (isAutoSaveEnabled()) {
-                        autoSaveCurrentProject()
-                    }
                     
                     loadTexturePacks()
                 }
@@ -291,14 +271,7 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
                 _isLoading.value = true
                 _errorMessage.value = null
                 
-                repository.saveProject(packId)
-                    .onSuccess { 
-                        _successMessage.value = "Project saved successfully!"
-                        _hasUnsavedChanges.value = false
-                    }
-                    .onFailure { 
-                        _errorMessage.value = "Failed to save project: ${it.message}"
-                    }
+                // Remove saveCurrentProject and autoSaveCurrentProject functions and all usages of repository.saveProject
                 
                 _isLoading.value = false
             }
@@ -311,13 +284,7 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
                 // Add small delay to avoid too frequent saves
                 delay(2000)
                 
-                repository.saveProject(packId)
-                    .onSuccess { 
-                        _hasUnsavedChanges.value = false
-                    }
-                    .onFailure { 
-                        // Silent failure for auto-save
-                    }
+                // Remove saveCurrentProject and autoSaveCurrentProject functions and all usages of repository.saveProject
             }
         }
     }
