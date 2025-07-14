@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 import java.io.InputStream
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.FilterQuality
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -664,8 +665,7 @@ fun EnhancedTextureCanvas(
                 drawImage(
                     image = bmp.asImageBitmap(),
                     topLeft = Offset.Zero,
-                    alpha = 1f,
-                    filterQuality = FilterQuality.None // Pixelated rendering
+                    alpha = 1f
                 )
             }
             // Draw the current path
