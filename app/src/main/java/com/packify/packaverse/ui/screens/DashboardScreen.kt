@@ -107,7 +107,20 @@ fun DashboardScreen(
                                 .background(Color(0xFF6B8E23), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("", color = Color.Transparent)
+                            Icon(
+                                imageVector = when (category) {
+                                    TextureCategory.BLOCKS -> Icons.Default.ViewInAr
+                                    TextureCategory.ITEMS -> Icons.Default.Inventory
+                                    TextureCategory.ENTITY -> Icons.Default.Person
+                                    TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
+                                    TextureCategory.GUI -> Icons.Default.Dashboard
+                                    TextureCategory.PARTICLE -> Icons.Default.Star
+                                    TextureCategory.MISC -> Icons.Default.MoreVert
+                                },
+                                contentDescription = null,
+                                tint = Color(0xFFFFB6C1),
+                                modifier = Modifier.size(40.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.width(24.dp))
                         Text(
