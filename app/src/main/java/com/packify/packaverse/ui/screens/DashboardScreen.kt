@@ -53,7 +53,7 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Addons Maker for Minecraft") },
+                title = { Text("Addons Maker for Minecraft", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -65,6 +65,14 @@ fun DashboardScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            BottomNavigationBar(
+                onNavigateToHome = { /* TODO: Implement navigation to Home */ },
+                onNavigateToDashboard = {},
+                onNavigateToSettings = onNavigateToSettings,
+                currentRoute = "dashboard"
+            )
         }
     ) { paddingValues ->
         val texturePacks by viewModel.texturePacks.collectAsState()
@@ -74,6 +82,7 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
+                .systemBarsPadding()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
@@ -85,36 +94,51 @@ fun DashboardScreen(
                 onExportPack = { /* export logic */ }
             )
             categories.forEach { category ->
-                Card(
+                ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp)
+                        .heightIn(min = 80.dp)
                         .clickable {
                             selectedPack?.let { onNavigateToCategory(category) }
                         },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF3C2F2F)
-                    )
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(80.dp)
-                                .background(Color(0xFF6B8E23), RoundedCornerShape(12.dp)),
+                                .size(56.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.medium),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("", color = Color.Transparent)
+                            Icon(
+                                imageVector = when (category) {
+                                    TextureCategory.BLOCKS -> Icons.Default.ViewInAr
+                                    TextureCategory.ITEMS -> Icons.Default.Inventory
+                                    TextureCategory.ENTITY -> Icons.Default.Person
+                                    TextureCategory.ENVIRONMENT -> Icons.Default.Landscape
+                                    TextureCategory.GUI -> Icons.Default.Dashboard
+                                    TextureCategory.PARTICLE -> Icons.Default.Star
+                                    TextureCategory.MISC -> Icons.Default.MoreVert
+                                },
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.width(24.dp))
                         Text(
                             text = category.displayName,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

@@ -54,11 +54,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = "Settings",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Normal
+                        style = MaterialTheme.typography.titleLarge
                     )
                 },
                 navigationIcon = {
@@ -85,136 +84,149 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
-                .padding(16.dp)
+                .systemBarsPadding()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Appearance Section
-            SettingsSection(
-                title = "Appearance",
-                icon = Icons.Default.Palette
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                SettingsSwitch(
-                    title = "Dark Mode",
-                    subtitle = "Use dark theme for the app",
-                    icon = Icons.Default.DarkMode,
-                    checked = isDarkMode,
-                    onCheckedChange = { themeManager.toggleTheme() }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Project Settings Section
-            SettingsSection(
-                title = "Project Settings",
-                icon = Icons.Default.Settings
-            ) {
-                SettingsSwitch(
-                    title = "Auto Save",
-                    subtitle = "Automatically save changes while editing",
-                    icon = Icons.Default.Save,
-                    checked = autoSave,
-                    onCheckedChange = { autoSave = it }
-                )
-                
-                SettingsSwitch(
-                    title = "High Quality Export",
-                    subtitle = "Export textures in maximum quality",
-                    icon = Icons.Default.HighQuality,
-                    checked = highQualityExport,
-                    onCheckedChange = { highQualityExport = it }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Storage Section
-            SettingsSection(
-                title = "Storage",
-                icon = Icons.Default.Storage
-            ) {
-                val storageStatus = if (viewModel?.hasStoragePermission() == true) {
-                    "External Storage (Recommended)"
-                } else {
-                    "Internal Storage (Projects will be deleted with app)"
-                }
-                
-                val projectsPath = viewModel?.getProjectsDirectoryPath() ?: "Unknown"
-                
-                SettingsItem(
-                    title = "Storage Location",
-                    subtitle = storageStatus,
-                    icon = Icons.Default.Folder,
-                    onClick = {}
-                )
-                
-                SettingsItem(
-                    title = "Projects Directory",
-                    subtitle = projectsPath,
-                    icon = Icons.Default.FolderOpen,
-                    onClick = {}
-                )
-                
-                if (viewModel?.hasStoragePermission() != true) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Grant storage permission to save projects externally so they won't be deleted when you uninstall the app.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(start = 32.dp)
+                SettingsSection(
+                    title = "Appearance",
+                    icon = Icons.Default.Palette
+                ) {
+                    SettingsSwitch(
+                        title = "Dark Mode",
+                        subtitle = "Use dark theme for the app",
+                        icon = Icons.Default.DarkMode,
+                        checked = isDarkMode,
+                        onCheckedChange = { themeManager.toggleTheme() }
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // About Section
-            SettingsSection(
-                title = "About",
-                icon = Icons.Default.Info
+            // Project Settings Section
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                SettingsItem(
-                    title = "Version",
-                    subtitle = "1.0.0",
-                    icon = Icons.Default.Apps,
-                    onClick = {}
-                )
-                
-                SettingsItem(
-                    title = "Developer",
-                    subtitle = "MCPE Texture Pack Maker",
-                    icon = Icons.Default.Person,
-                    onClick = {}
-                )
-                
-                SettingsItem(
-                    title = "License",
-                    subtitle = "MIT License",
-                    icon = Icons.Default.Description,
-                    onClick = {}
-                )
+                SettingsSection(
+                    title = "Project Settings",
+                    icon = Icons.Default.Settings
+                ) {
+                    SettingsSwitch(
+                        title = "Auto Save",
+                        subtitle = "Automatically save changes while editing",
+                        icon = Icons.Default.Save,
+                        checked = autoSave,
+                        onCheckedChange = { autoSave = it }
+                    )
+                    SettingsSwitch(
+                        title = "High Quality Export",
+                        subtitle = "Export textures in maximum quality",
+                        icon = Icons.Default.HighQuality,
+                        checked = highQualityExport,
+                        onCheckedChange = { highQualityExport = it }
+                    )
+                }
             }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
+            // Storage Section
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                SettingsSection(
+                    title = "Storage",
+                    icon = Icons.Default.Storage
+                ) {
+                    val storageStatus = if (viewModel?.hasStoragePermission() == true) {
+                        "External Storage (Recommended)"
+                    } else {
+                        "Internal Storage (Projects will be deleted with app)"
+                    }
+                    val projectsPath = viewModel?.getProjectsDirectoryPath() ?: "Unknown"
+                    SettingsItem(
+                        title = "Storage Location",
+                        subtitle = storageStatus,
+                        icon = Icons.Default.Folder,
+                        onClick = {}
+                    )
+                    SettingsItem(
+                        title = "Projects Directory",
+                        subtitle = projectsPath,
+                        icon = Icons.Default.FolderOpen,
+                        onClick = {}
+                    )
+                    if (viewModel?.hasStoragePermission() != true) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Grant storage permission to save projects externally so they won't be deleted when you uninstall the app.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 32.dp)
+                        )
+                    }
+                }
+            }
+            // About Section
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                SettingsSection(
+                    title = "About",
+                    icon = Icons.Default.Info
+                ) {
+                    SettingsItem(
+                        title = "Version",
+                        subtitle = "1.0.0",
+                        icon = Icons.Default.Apps,
+                        onClick = {}
+                    )
+                    SettingsItem(
+                        title = "Developer",
+                        subtitle = "MCPE Texture Pack Maker",
+                        icon = Icons.Default.Person,
+                        onClick = {}
+                    )
+                    SettingsItem(
+                        title = "License",
+                        subtitle = "MIT License",
+                        icon = Icons.Default.Description,
+                        onClick = {}
+                    )
+                }
+            }
             // Reset Settings Button
-            Button(
+            FilledTonalButton(
                 onClick = { showResetDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF6B6B),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp)
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.filledTonalButtonColors()
             ) {
                 Icon(Icons.Default.Restore, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Reset to Defaults")
             }
-            
             // Share App Button
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Button(
+            FilledTonalButton(
                 onClick = {
                     val shareIntent = Intent().apply {
                         action = Intent.ACTION_SEND
@@ -225,16 +237,12 @@ fun SettingsScreen(
                     try {
                         context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                     } catch (e: Exception) {
-                        // Handle case where no app can handle the share intent
                         viewModel?.showError("No app available to share")
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFB6C1),
-                    contentColor = Color.Black
-                ),
-                shape = RoundedCornerShape(12.dp)
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.filledTonalButtonColors()
             ) {
                 Icon(Icons.Default.Share, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))

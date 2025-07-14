@@ -37,15 +37,26 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import android.annotation.TargetApi
 import android.annotation.SuppressLint
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.foundation.isSystemInDarkTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             PackifyTheme {
+                val backgroundColor = MaterialTheme.colorScheme.background
+                val isDark = isSystemInDarkTheme()
+                SideEffect {
+                    WindowCompat.setDecorFitsSystemWindows(window, false)
+                    window.statusBarColor = backgroundColor.toArgb()
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = !isDark
+                }
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = backgroundColor
                 ) {
                     PackifyApp()
                 }
@@ -236,18 +247,9 @@ fun PackifyApp() {
             com.packify.packaverse.ui.screens.LibraryScreen(
                 folderPath = folderPath,
                 onImageSelected = { assetPath ->
-                    // assetPath is like asset://base/items/filename.png
-                    // We need to call viewModel.addTexture with a Uri that the repository can handle
-                    val uri = Uri.parse(assetPath)
-                    // Find the current packId and category from the navController back stack
-                    val textureManagementEntry = navController.previousBackStackEntry
-                    val packId = textureManagementEntry?.arguments?.getString("packId") ?: ""
-                    val categoryName = textureManagementEntry?.arguments?.getString("category") ?: ""
-                    val category = com.packify.packaverse.data.TextureCategory.values().find { it.name == categoryName }
-                    if (packId.isNotEmpty() && category != null) {
-                        viewModel.addTexture(packId, category, uri)
-                        navController.popBackStack()
-                    }
+                    // Instead of adding the texture and popping back, navigate back and pass the assetPath
+                    navController.previousBackStackEntry?.savedStateHandle?.set("selectedAssetPath", assetPath)
+                    navController.popBackStack()
                 },
                 onNavigateBack = { navController.popBackStack() }
             )

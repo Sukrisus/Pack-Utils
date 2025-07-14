@@ -235,9 +235,25 @@ class TexturePackRepository(private val context: Context) {
             val categoryDir = File(packDir, category.mcpePath)
             categoryDir.mkdirs()
 
-            // Generate a unique filename
-            val timestamp = System.currentTimeMillis()
-            val fileName = "custom_texture_$timestamp.png"
+            // Use the original file name
+            val fileName = when {
+                textureUri.scheme == "asset" -> {
+                    val assetPath = textureUri.toString().removePrefix("asset://")
+                    assetPath.substringAfterLast('/')
+                }
+                textureUri.scheme == "content" || textureUri.scheme == "file" -> {
+                    // Try to get file name from uri
+                    var name: String? = null
+                    context.contentResolver.query(textureUri, null, null, null, null)?.use { cursor ->
+                        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (nameIndex >= 0 && cursor.moveToFirst()) {
+                            name = cursor.getString(nameIndex)
+                        }
+                    }
+                    name ?: File(textureUri.path ?: "").name
+                }
+                else -> File(textureUri.path ?: "").name
+            }
             val textureFile = File(categoryDir, fileName)
 
             if (textureUri.scheme == "asset") {
@@ -248,7 +264,15 @@ class TexturePackRepository(private val context: Context) {
                         inputStream.copyTo(outputStream)
                     }
                 }
+            } else if (textureUri.scheme == "content" || textureUri.scheme == "file") {
+                // Copy the file directly to preserve resolution
+                context.contentResolver.openInputStream(textureUri)?.use { inputStream ->
+                    FileOutputStream(textureFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
             } else {
+                // Fallback: decode and re-encode as Bitmap (should rarely happen)
                 context.contentResolver.openInputStream(textureUri)?.use { inputStream ->
                     val bitmap = BitmapFactory.decodeStream(inputStream)
                     FileOutputStream(textureFile).use { outputStream ->

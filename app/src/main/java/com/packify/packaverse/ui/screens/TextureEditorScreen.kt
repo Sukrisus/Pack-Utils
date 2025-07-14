@@ -1,6 +1,7 @@
 package com.packify.packaverse.ui.screens
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.toSize
 import com.packify.packaverse.data.TextureItem
 import com.packify.packaverse.viewmodel.TexturePackViewModel
 import kotlinx.coroutines.launch
+import java.io.InputStream
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -62,6 +64,7 @@ fun TextureEditorScreen(
     var showExitDialog by remember { mutableStateOf(false) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var brushSize by remember { mutableStateOf(1f) } // Default to 1 pixel
 
     // Undo/Redo stacks
     val undoStack = remember { mutableStateListOf<android.graphics.Bitmap>() }
@@ -69,6 +72,24 @@ fun TextureEditorScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // Load the bitmap from the texture path on first composition
+    LaunchedEffect(texture.originalPath) {
+        if (canvasBitmap == null) {
+            val bmp: Bitmap? = try {
+                if (texture.originalPath.startsWith("asset://")) {
+                    val assetPath = texture.originalPath.removePrefix("asset://")
+                    val inputStream: InputStream = context.assets.open(assetPath)
+                    BitmapFactory.decodeStream(inputStream)
+                } else {
+                    BitmapFactory.decodeFile(texture.originalPath)
+                }
+            } catch (e: Exception) {
+                null
+            }
+            canvasBitmap = bmp?.copy(Bitmap.Config.ARGB_8888, true)
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -108,8 +129,7 @@ fun TextureEditorScreen(
                 title = {
                     Text(
                         text = "Edit ${texture.name}",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Normal
+                        style = MaterialTheme.typography.titleLarge
                     )
                 },
                 navigationIcon = {
@@ -134,7 +154,6 @@ fun TextureEditorScreen(
                         Icon(Icons.Default.Redo, contentDescription = "Redo")
                     }
                     IconButton(onClick = {
-                        // Save current texture
                         canvasBitmap?.let { bitmap ->
                             viewModel.saveEditedTexture(packId, texture.category, texture.name, bitmap)
                             hasUnsavedChanges = false
@@ -161,7 +180,8 @@ fun TextureEditorScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(12.dp)
+                    .systemBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -200,14 +220,15 @@ fun TextureEditorScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .systemBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             EnhancedTextureCanvas(
                 texture = texture,
                 currentTool = currentTool,
-                brushSize = 10f, // Default size
+                brushSize = brushSize, // Use the state variable
                 brushShape = BrushShape.ROUND, // Default shape
                 selectedColor = selectedColor,
                 opacity = 1f,
@@ -508,7 +529,6 @@ fun EnhancedTextureCanvas(
     var path by remember { mutableStateOf(Path()) }
     var lastPoint by remember { mutableStateOf<Offset?>(null) }
     var drawingPoints by remember { mutableStateOf(listOf<Offset>()) }
-    // Use externalBitmap if provided
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(externalBitmap) }
     var canvasSize by remember { mutableStateOf<androidx.compose.ui.geometry.Size?>(null) }
 
@@ -532,7 +552,7 @@ fun EnhancedTextureCanvas(
                     .onGloballyPositioned { coordinates ->
                         canvasSize = coordinates.size.toSize()
                     }
-                    .pointerInput(currentTool, brushSize, selectedColor) {
+                    .pointerInput(currentTool, brushSize, selectedColor, externalBitmap) {
                         detectDragGestures(
                             onDragStart = { offset ->
                                 lastPoint = offset
@@ -554,7 +574,6 @@ fun EnhancedTextureCanvas(
                                             path.lineTo(newPoint.x, newPoint.y)
                                         }
                                         EditorTool.SPRAY_PAINT -> {
-                                            // For spray paint, create multiple small dots
                                             repeat(5) {
                                                 val randomX = newPoint.x + (Math.random() - 0.5).toFloat() * brushSize
                                                 val randomY = newPoint.y + (Math.random() - 0.5).toFloat() * brushSize
@@ -570,24 +589,26 @@ fun EnhancedTextureCanvas(
                             onDragEnd = {
                                 lastPoint = null
                                 drawingPoints = emptyList()
-
-                                // Handle fill tool
-                                if (currentTool == EditorTool.FILL) {
-                                    // TODO: Implement flood fill algorithm
-                                    onDrawingChanged()
+                                // Commit the path to the bitmap
+                                canvasBitmap?.let { bmp ->
+                                    val canvas = Canvas(bmp)
+                                    val paint = Paint().apply {
+                                        isAntiAlias = true
+                                        color = when (currentTool) {
+                                            EditorTool.ERASER -> android.graphics.Color.TRANSPARENT
+                                            else -> selectedColor.copy(alpha = opacity).toArgb()
+                                        }
+                                        style = Paint.Style.STROKE
+                                        strokeWidth = brushSize
+                                        strokeCap = Paint.Cap.ROUND
+                                        strokeJoin = Paint.Join.ROUND
+                                        xfermode = if (currentTool == EditorTool.ERASER) android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR) else null
+                                    }
+                                    val androidPath = android.graphics.Path()
+                                    canvas.drawPath(androidPath, paint)
+                                    onBitmapUpdated(bmp.copy(bmp.config, true))
                                 }
-
-                                // Capture bitmap after drawing
-                                canvasSize?.let { size ->
-                                    val bitmap = android.graphics.Bitmap.createBitmap(
-                                        size.width.toInt(),
-                                        size.height.toInt(),
-                                        android.graphics.Bitmap.Config.ARGB_8888
-                                    )
-                                    val canvas = android.graphics.Canvas(bitmap)
-                                    // TODO: Draw the current canvas state to bitmap
-                                    onBitmapUpdated(bitmap)
-                                }
+                                path.reset()
                             }
                         )
                     }
@@ -596,7 +617,6 @@ fun EnhancedTextureCanvas(
                 val checkerSize = 20f
                 val checkerColor1 = Color.White
                 val checkerColor2 = Color.LightGray
-
                 for (x in 0 until (size.width / checkerSize).toInt() + 1) {
                     for (y in 0 until (size.height / checkerSize).toInt() + 1) {
                         val isEven = (x + y) % 2 == 0
@@ -608,10 +628,14 @@ fun EnhancedTextureCanvas(
                         )
                     }
                 }
-
-                // Draw the texture background
-                // TODO: Load and draw actual texture bitmap
-
+                // Draw the bitmap as the background
+                canvasBitmap?.let { bmp ->
+                    drawImage(
+                        image = bmp.asImageBitmap(),
+                        topLeft = Offset.Zero,
+                        alpha = 1f
+                    )
+                }
                 // Draw the current path
                 when (currentTool) {
                     EditorTool.BRUSH, EditorTool.PENCIL -> {
@@ -656,7 +680,6 @@ fun EnhancedTextureCanvas(
                     }
                     else -> {}
                 }
-
                 // Draw brush preview
                 lastPoint?.let { point ->
                     when (brushShape) {
@@ -691,7 +714,6 @@ fun EnhancedTextureCanvas(
                             )
                         }
                         BrushShape.STAR -> {
-                            // Simple star shape preview
                             drawCircle(
                                 color = selectedColor.copy(alpha = 0.3f),
                                 radius = brushSize / 2,
