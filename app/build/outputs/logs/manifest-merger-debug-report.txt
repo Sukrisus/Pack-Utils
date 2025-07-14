@@ -1,9 +1,20 @@
 -- Merging decision tree log ---
+provider#androidx.core.content.FileProvider
+INJECTED from /workspace/app/src/main/AndroidManifest.xml:30:9-38:20
+	android:grantUriPermissions
+		ADDED from /workspace/app/src/main/AndroidManifest.xml:34:13-47
+	android:authorities
+		INJECTED from /workspace/app/src/main/AndroidManifest.xml
+		ADDED from /workspace/app/src/main/AndroidManifest.xml:32:13-60
+	android:exported
+		ADDED from /workspace/app/src/main/AndroidManifest.xml:33:13-37
+	android:name
+		ADDED from /workspace/app/src/main/AndroidManifest.xml:31:13-62
 manifest
-ADDED from /workspace/app/src/main/AndroidManifest.xml:2:1-32:12
-INJECTED from /workspace/app/src/main/AndroidManifest.xml:2:1-32:12
-INJECTED from /workspace/app/src/main/AndroidManifest.xml:2:1-32:12
-INJECTED from /workspace/app/src/main/AndroidManifest.xml:2:1-32:12
+ADDED from /workspace/app/src/main/AndroidManifest.xml:2:1-41:12
+INJECTED from /workspace/app/src/main/AndroidManifest.xml:2:1-41:12
+INJECTED from /workspace/app/src/main/AndroidManifest.xml:2:1-41:12
+INJECTED from /workspace/app/src/main/AndroidManifest.xml:2:1-41:12
 MERGED from [io.coil-kt:coil-compose:2.5.0] /home/ubuntu/.gradle/caches/transforms-3/78e766f39a57ca957c5d493598d11800/transformed/coil-compose-2.5.0/AndroidManifest.xml:2:1-7:12
 MERGED from [io.coil-kt:coil-compose-base:2.5.0] /home/ubuntu/.gradle/caches/transforms-3/16e687a4ce35b6daecb663c00b1cec26/transformed/coil-compose-base-2.5.0/AndroidManifest.xml:2:1-7:12
 MERGED from [io.coil-kt:coil:2.5.0] /home/ubuntu/.gradle/caches/transforms-3/9fadc059e7a49253742491bf9f4f1171/transformed/coil-2.5.0/AndroidManifest.xml:2:1-7:12
@@ -102,8 +113,8 @@ ADDED from /workspace/app/src/main/AndroidManifest.xml:7:5-8:40
 	android:name
 		ADDED from /workspace/app/src/main/AndroidManifest.xml:7:22-79
 application
-ADDED from /workspace/app/src/main/AndroidManifest.xml:10:5-30:19
-INJECTED from /workspace/app/src/main/AndroidManifest.xml:10:5-30:19
+ADDED from /workspace/app/src/main/AndroidManifest.xml:10:5-39:19
+INJECTED from /workspace/app/src/main/AndroidManifest.xml:10:5-39:19
 MERGED from [androidx.compose.ui:ui-test-manifest:1.6.8] /home/ubuntu/.gradle/caches/transforms-3/fdd448454a63f957b6ccd5facedd5574/transformed/ui-test-manifest-1.6.8/AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.compose.ui:ui-test-manifest:1.6.8] /home/ubuntu/.gradle/caches/transforms-3/fdd448454a63f957b6ccd5facedd5574/transformed/ui-test-manifest-1.6.8/AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.6.8] /home/ubuntu/.gradle/caches/transforms-3/c76ec64cfa59fd823f37ffc7fa4cc496/transformed/ui-tooling-release/AndroidManifest.xml:22:5-26:19
@@ -162,6 +173,12 @@ category#android.intent.category.LAUNCHER
 ADDED from /workspace/app/src/main/AndroidManifest.xml:27:17-77
 	android:name
 		ADDED from /workspace/app/src/main/AndroidManifest.xml:27:27-74
+meta-data#android.support.FILE_PROVIDER_PATHS
+ADDED from /workspace/app/src/main/AndroidManifest.xml:35:13-37:54
+	android:resource
+		ADDED from /workspace/app/src/main/AndroidManifest.xml:37:17-51
+	android:name
+		ADDED from /workspace/app/src/main/AndroidManifest.xml:36:17-67
 uses-sdk
 INJECTED from /workspace/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /workspace/app/src/main/AndroidManifest.xml

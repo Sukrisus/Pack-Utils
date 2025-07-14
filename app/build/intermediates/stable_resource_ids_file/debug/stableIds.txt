@@ -1,3 +1,4 @@
+com.packify.packaverse:xml/file_paths = 0x7f100002
 com.packify.packaverse:styleable/ViewBackgroundHelper = 0x7f0f0035
 com.packify.packaverse:styleable/StateListDrawable = 0x7f0f002f
 com.packify.packaverse:styleable/Spinner = 0x7f0f002e

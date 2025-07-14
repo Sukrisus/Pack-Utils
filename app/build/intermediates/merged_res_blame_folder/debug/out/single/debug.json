@@ -20,6 +20,10 @@
         "source": "com.packify.packaverse.app-main-60:/mipmap-xxxhdpi/ic_launcher_round.png"
     },
     {
+        "merged": "com.packify.packaverse.app-merged_res-58:/xml_file_paths.xml.flat",
+        "source": "com.packify.packaverse.app-main-60:/xml/file_paths.xml"
+    },
+    {
         "merged": "com.packify.packaverse.app-merged_res-58:/drawable_ic_launcher_foreground.xml.flat",
         "source": "com.packify.packaverse.app-main-60:/drawable/ic_launcher_foreground.xml"
     },
