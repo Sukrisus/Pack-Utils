@@ -244,6 +244,7 @@ fun TextureEditorScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
+                        .sizeIn(minWidth = 400.dp, minHeight = 400.dp) // Ensure minimum canvas size
                 ) {
                     EnhancedTextureCanvas(
                         texture = texture,
