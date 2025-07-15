@@ -233,7 +233,6 @@ fun TextureEditorScreen(
                 .systemBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
             if (canvasBitmap == null) {
                 Text(
                     text = "Failed to load texture image.",
@@ -241,22 +240,28 @@ fun TextureEditorScreen(
                     style = MaterialTheme.typography.bodyLarge
                 )
             } else {
-                EnhancedTextureCanvas(
-                    texture = texture,
-                    currentTool = currentTool,
-                    brushSize = brushSize, // Use the state variable
-                    brushShape = BrushShape.ROUND, // Default shape
-                    selectedColor = selectedColor,
-                    opacity = 1f,
-                    onDrawingChanged = {
-                        hasUnsavedChanges = true
-                    },
-                    onBitmapUpdated = { bitmap ->
-                        canvasBitmap = bitmap
-                        pushUndo(bitmap)
-                    },
-                    externalBitmap = canvasBitmap
-                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    EnhancedTextureCanvas(
+                        texture = texture,
+                        currentTool = currentTool,
+                        brushSize = brushSize, // Use the state variable
+                        brushShape = BrushShape.ROUND, // Default shape
+                        selectedColor = selectedColor,
+                        opacity = 1f,
+                        onDrawingChanged = {
+                            hasUnsavedChanges = true
+                        },
+                        onBitmapUpdated = { bitmap ->
+                            canvasBitmap = bitmap
+                            pushUndo(bitmap)
+                        },
+                        externalBitmap = canvasBitmap
+                    )
+                }
                 // Add color palette below the canvas
                 AdvancedColorPalette(
                     selectedColor = selectedColor,
@@ -578,8 +583,7 @@ fun EnhancedTextureCanvas(
     ) {
         Canvas(
             modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(aspectRatio)
+                .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
                         scale = (scale * zoom).coerceIn(0.5f, 16f)
@@ -662,20 +666,21 @@ fun EnhancedTextureCanvas(
         ) {
             val canvasW = size.width
             val canvasH = size.height
-            val baseScale = canvasW / bitmapWidth
-            val effectiveScale = baseScale * scale
+            val scaleToFit = minOf(canvasW / bitmapWidth, canvasH / bitmapHeight)
+            val effectiveScale = scaleToFit * scale
             val imageW = bitmapWidth * effectiveScale
             val imageH = bitmapHeight * effectiveScale
             val centerX = canvasW / 2f + offset.x
             val centerY = canvasH / 2f + offset.y
             val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
 
-            // Draw the bitmap, pixel-accurate, filling the width, zoomable and pannable
+            // Draw the bitmap, pixel-accurate, filling the area, zoomable and pannable
             canvasBitmap?.let { bmp ->
                 drawImage(
                     image = bmp.asImageBitmap(),
                     topLeft = topLeft,
-                    alpha = 1f
+                    alpha = 1f,
+                    // No dstSize, scale is handled by effectiveScale
                 )
             }
             // Draw the current path (apply same transform)
