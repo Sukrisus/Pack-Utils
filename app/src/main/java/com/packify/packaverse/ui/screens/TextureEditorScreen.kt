@@ -575,6 +575,10 @@ fun EnhancedTextureCanvas(
     val bitmapHeight = canvasBitmap?.height ?: 64
     val aspectRatio = bitmapWidth.toFloat() / bitmapHeight.toFloat()
 
+    // Always use a fixed virtual image size for display scaling
+    val virtualImageSize = 256f
+    val virtualAspectRatio = 1f // Square display for all images
+
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
@@ -667,21 +671,22 @@ fun EnhancedTextureCanvas(
         ) {
             val canvasW = size.width
             val canvasH = size.height
-            val scaleToFit = minOf(canvasW / bitmapWidth, canvasH / bitmapHeight)
+            // Use virtual image size for scaling, so all images appear the same size
+            val scaleToFit = minOf(canvasW / virtualImageSize, canvasH / virtualImageSize)
             val effectiveScale = scaleToFit * scale
-            val imageW = bitmapWidth * effectiveScale
-            val imageH = bitmapHeight * effectiveScale
+            val imageW = virtualImageSize * effectiveScale
+            val imageH = virtualImageSize * effectiveScale
             val centerX = canvasW / 2f + offset.x
             val centerY = canvasH / 2f + offset.y
             val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
 
-            // Draw the bitmap, pixel-accurate, filling the area, zoomable and pannable
+            // Draw the bitmap, scaled to fill the virtual image size
             canvasBitmap?.let { bmp ->
                 drawImage(
                     image = bmp.asImageBitmap(),
                     topLeft = topLeft,
                     alpha = 1f,
-                    // No dstSize, scale is handled by effectiveScale
+                    dstSize = IntSize(imageW.toInt(), imageH.toInt()) // Force all images to same display size
                 )
             }
             // Draw the current path (apply same transform)
