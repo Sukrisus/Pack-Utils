@@ -96,6 +96,12 @@ fun TextureEditorScreen(
                 null
             }
             canvasBitmap = bmp?.copy(Bitmap.Config.ARGB_8888, true)
+            // Fallback: if bitmap is null, create a visible test bitmap
+            if (canvasBitmap == null) {
+                val testBmp = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888)
+                for (y in 0 until 16) for (x in 0 until 16) testBmp.setPixel(x, y, android.graphics.Color.RED)
+                canvasBitmap = testBmp
+            }
         }
     }
 
