@@ -682,11 +682,16 @@ fun EnhancedTextureCanvas(
 
             // Draw the bitmap, scaled to fill the virtual image size
             canvasBitmap?.let { bmp ->
-                drawImage(
-                    image = bmp.asImageBitmap(),
-                    topLeft = topLeft,
-                    alpha = 1f
-                )
+                withTransform({
+                    translate(centerX - imageW / 2f, centerY - imageH / 2f)
+                    scale(imageW / bitmapWidth, imageH / bitmapHeight)
+                }) {
+                    drawImage(
+                        image = bmp.asImageBitmap(),
+                        topLeft = Offset.Zero,
+                        alpha = 1f
+                    )
+                }
             }
             // Draw the current path (apply same transform)
             when (currentTool) {
