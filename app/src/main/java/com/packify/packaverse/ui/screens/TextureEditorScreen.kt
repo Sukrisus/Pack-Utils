@@ -619,42 +619,37 @@ fun EnhancedTextureCanvas(
 
                             lastPoint?.let { last ->
                                 when (currentTool) {
-                                    EditorTool.BRUSH, EditorTool.PENCIL, EditorTool.ERASER -> {
-                                        path.lineTo(newPoint.x, newPoint.y)
-                                        // Commit the path to the bitmap in real-time
+                                    EditorTool.BRUSH, EditorTool.ERASER -> {
+                                        // Convert to bitmap pixel coordinates
+                                        val tx = ((newPoint.x / virtualImageSize) * bitmapWidth).toInt().coerceIn(0, bitmapWidth - 1)
+                                        val ty = ((newPoint.y / virtualImageSize) * bitmapHeight).toInt().coerceIn(0, bitmapHeight - 1)
+                                        val halfBrush = (brushSize / 2).toInt().coerceAtLeast(1)
                                         canvasBitmap?.let { bmp ->
-                                            val canvas = Canvas(bmp)
-                                            val paint = Paint().apply {
-                                                isAntiAlias = false // pixel-perfect
-                                                color = when (currentTool) {
-                                                    EditorTool.ERASER -> android.graphics.Color.TRANSPARENT
-                                                    else -> selectedColor.copy(alpha = opacity).toArgb()
+                                            for (dy in -halfBrush..halfBrush) {
+                                                for (dx in -halfBrush..halfBrush) {
+                                                    val px = (tx + dx).coerceIn(0, bitmapWidth - 1)
+                                                    val py = (ty + dy).coerceIn(0, bitmapHeight - 1)
+                                                    if (currentTool == EditorTool.BRUSH) {
+                                                        bmp.setPixel(px, py, selectedColor.copy(alpha = opacity).toArgb())
+                                                    } else if (currentTool == EditorTool.ERASER) {
+                                                        bmp.setPixel(px, py, android.graphics.Color.TRANSPARENT)
+                                                    }
                                                 }
-                                                style = Paint.Style.STROKE
-                                                strokeWidth = brushSize
-                                                strokeCap = Paint.Cap.BUTT // pixel-perfect
-                                                strokeJoin = Paint.Join.MITER // pixel-perfect
-                                                xfermode = if (currentTool == EditorTool.ERASER) android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR) else null
-                                            }
-                                            // Convert Compose path to Android path
-                                            val androidPath = android.graphics.Path()
-                                            val pathPoints = path.asComposePath().asAndroidPathPoints()
-                                            if (pathPoints.isNotEmpty()) {
-                                                androidPath.moveTo(pathPoints[0].x, pathPoints[0].y)
-                                                for (i in 1 until pathPoints.size) {
-                                                    androidPath.lineTo(pathPoints[i].x, pathPoints[i].y)
-                                                }
-                                                canvas.drawPath(androidPath, paint)
                                             }
                                             onBitmapUpdated(bmp.copy(bmp.config, true))
                                         }
                                     }
-                                    EditorTool.SPRAY_PAINT -> {
-                                        repeat(5) {
-                                            val randomX = newPoint.x + (Math.random() - 0.5).toFloat() * brushSize
-                                            val randomY = newPoint.y + (Math.random() - 0.5).toFloat() * brushSize
-                                            path.addCircle(randomX, randomY, 2f, Path.Direction.CW)
+                                    EditorTool.PENCIL -> {
+                                        // Pencil is 1 pixel
+                                        val tx = ((newPoint.x / virtualImageSize) * bitmapWidth).toInt().coerceIn(0, bitmapWidth - 1)
+                                        val ty = ((newPoint.y / virtualImageSize) * bitmapHeight).toInt().coerceIn(0, bitmapHeight - 1)
+                                        canvasBitmap?.let { bmp ->
+                                            bmp.setPixel(tx, ty, selectedColor.copy(alpha = opacity).toArgb())
+                                            onBitmapUpdated(bmp.copy(bmp.config, true))
                                         }
+                                    }
+                                    EditorTool.SPRAY_PAINT -> {
+                                        // Leave as is
                                     }
                                     else -> {}
                                 }
@@ -681,19 +676,21 @@ fun EnhancedTextureCanvas(
             val centerY = canvasH / 2f + offset.y
             val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
 
-            // 1. Draw checkerboard background
-            val checkerSize = 16f * effectiveScale
-            for (y in 0 until imageH.toInt() step checkerSize.toInt()) {
-                for (x in 0 until imageW.toInt() step checkerSize.toInt()) {
-                    val isLight = ((x / checkerSize).toInt() + (y / checkerSize).toInt()) % 2 == 0
-                    drawRect(
-                        color = if (isLight) Color(0xFFE0E0E0) else Color(0xFFB0B0B0),
-                        topLeft = topLeft + Offset(x.toFloat(), y.toFloat()),
-                        size = androidx.compose.ui.geometry.Size(
-                            minOf(checkerSize, imageW - x),
-                            minOf(checkerSize, imageH - y)
+            // 1. Draw checkerboard background in bitmap pixel space, so it aligns with the image grid
+            withTransform({
+                translate(centerX - imageW / 2f, centerY - imageH / 2f)
+                scale(imageW / bitmapWidth, imageH / bitmapHeight)
+            }) {
+                val checkerSizePx = 1f // 1 bitmap pixel
+                for (y in 0 until bitmapHeight) {
+                    for (x in 0 until bitmapWidth) {
+                        val isLight = (x + y) % 2 == 0
+                        drawRect(
+                            color = if (isLight) Color(0xFFE0E0E0) else Color(0xFFB0B0B0),
+                            topLeft = Offset(x.toFloat(), y.toFloat()),
+                            size = androidx.compose.ui.geometry.Size(checkerSizePx, checkerSizePx)
                         )
-                    )
+                    }
                 }
             }
 
