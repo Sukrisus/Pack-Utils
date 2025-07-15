@@ -74,6 +74,7 @@ fun TextureEditorScreen(
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var brushSize by remember { mutableStateOf(1f) } // Default to 1 pixel
+    var imageReloadTrigger by remember { mutableStateOf(0) }
 
     // Undo/Redo stacks
     val undoStack = remember { mutableStateListOf<android.graphics.Bitmap>() }
@@ -82,9 +83,9 @@ fun TextureEditorScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Load the bitmap from the texture path on first composition
-    LaunchedEffect(texture.originalPath) {
-        if (canvasBitmap == null) {
+    // Load the bitmap from the texture path on first composition or when imageReloadTrigger changes
+    LaunchedEffect(texture.originalPath, imageReloadTrigger) {
+        if (canvasBitmap == null || imageReloadTrigger > 0) {
             val bmp: Bitmap? = try {
                 if (texture.originalPath.startsWith("asset://")) {
                     val assetPath = texture.originalPath.removePrefix("asset://")
@@ -113,6 +114,7 @@ fun TextureEditorScreen(
             viewModel.replaceTexture(packId, texture.mcpePath, uri)
             hasUnsavedChanges = true
             showImportDialog = false
+            imageReloadTrigger++ // trigger reload after import
         }
     }
 
