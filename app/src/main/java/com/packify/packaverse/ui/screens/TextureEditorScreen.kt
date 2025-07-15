@@ -35,6 +35,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import com.packify.packaverse.data.TextureItem
@@ -73,6 +74,7 @@ fun TextureEditorScreen(
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var brushSize by remember { mutableStateOf(1f) } // Default to 1 pixel
+    var imageReloadTrigger by remember { mutableStateOf(0) }
 
     // Undo/Redo stacks
     val undoStack = remember { mutableStateListOf<android.graphics.Bitmap>() }
@@ -81,9 +83,9 @@ fun TextureEditorScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Load the bitmap from the texture path on first composition
-    LaunchedEffect(texture.originalPath) {
-        if (canvasBitmap == null) {
+    // Load the bitmap from the texture path on first composition or when imageReloadTrigger changes
+    LaunchedEffect(texture.originalPath, imageReloadTrigger) {
+        if (canvasBitmap == null || imageReloadTrigger > 0) {
             val bmp: Bitmap? = try {
                 if (texture.originalPath.startsWith("asset://")) {
                     val assetPath = texture.originalPath.removePrefix("asset://")
@@ -96,6 +98,12 @@ fun TextureEditorScreen(
                 null
             }
             canvasBitmap = bmp?.copy(Bitmap.Config.ARGB_8888, true)
+            // Fallback: if bitmap is null, create a visible test bitmap
+            if (canvasBitmap == null) {
+                val testBmp = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888)
+                for (y in 0 until 16) for (x in 0 until 16) testBmp.setPixel(x, y, android.graphics.Color.RED)
+                canvasBitmap = testBmp
+            }
         }
     }
 
@@ -106,6 +114,7 @@ fun TextureEditorScreen(
             viewModel.replaceTexture(packId, texture.mcpePath, uri)
             hasUnsavedChanges = true
             showImportDialog = false
+            imageReloadTrigger++ // trigger reload after import
         }
     }
 
@@ -244,22 +253,13 @@ fun TextureEditorScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
+                        .sizeIn(minWidth = 256.dp, minHeight = 256.dp)
                 ) {
-                    EnhancedTextureCanvas(
-                        texture = texture,
-                        currentTool = currentTool,
-                        brushSize = brushSize, // Use the state variable
-                        brushShape = BrushShape.ROUND, // Default shape
-                        selectedColor = selectedColor,
-                        opacity = 1f,
-                        onDrawingChanged = {
-                            hasUnsavedChanges = true
-                        },
-                        onBitmapUpdated = { bitmap ->
-                            canvasBitmap = bitmap
-                            pushUndo(bitmap)
-                        },
-                        externalBitmap = canvasBitmap
+                    PixelCanvas(
+                        bitmap = canvasBitmap,
+                        modifier = Modifier.fillMaxSize(),
+                        minDisplaySize = 256.dp,
+                        maxDisplaySize = 512.dp
                     )
                 }
                 // Add color palette below the canvas
@@ -552,244 +552,6 @@ fun BrushShapeButton(
 }
 
 @Composable
-fun EnhancedTextureCanvas(
-    texture: TextureItem,
-    currentTool: EditorTool,
-    brushSize: Float,
-    brushShape: BrushShape,
-    selectedColor: Color,
-    opacity: Float,
-    onDrawingChanged: () -> Unit,
-    onBitmapUpdated: (android.graphics.Bitmap) -> Unit,
-    externalBitmap: android.graphics.Bitmap? = null
-) {
-    val density = LocalDensity.current
-    var path by remember { mutableStateOf(Path()) }
-    var lastPoint by remember { mutableStateOf<Offset?>(null) }
-    var drawingPoints by remember { mutableStateOf(listOf<Offset>()) }
-    var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(externalBitmap) }
-    var canvasSize by remember { mutableStateOf<androidx.compose.ui.geometry.Size?>(null) }
-
-    val bitmapWidth = canvasBitmap?.width ?: 64
-    val bitmapHeight = canvasBitmap?.height ?: 64
-    val aspectRatio = bitmapWidth.toFloat() / bitmapHeight.toFloat()
-
-    var scale by remember { mutableStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(0.5f, 16f)
-                        offset += pan
-                    }
-                }
-                .onGloballyPositioned { coordinates ->
-                    canvasSize = coordinates.size.toSize()
-                }
-                .pointerInput(currentTool, brushSize, selectedColor, externalBitmap) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            val canvasCenter = Offset(size.width / 2f, size.height / 2f)
-                            lastPoint = (offset - canvasCenter) / scale
-                            drawingPoints = listOf((offset - canvasCenter) / scale)
-                            path.reset()
-                            path.moveTo((offset - canvasCenter).x / scale, (offset - canvasCenter).y / scale)
-                        },
-                        onDrag = { change, _ ->
-                            change.consume()
-                            val canvasCenter = Offset(size.width / 2f, size.height / 2f)
-                            val newPoint = (change.position - canvasCenter) / scale
-                            drawingPoints = drawingPoints + newPoint
-
-                            lastPoint?.let { last ->
-                                when (currentTool) {
-                                    EditorTool.BRUSH, EditorTool.PENCIL -> {
-                                        path.lineTo(newPoint.x, newPoint.y)
-                                    }
-                                    EditorTool.ERASER -> {
-                                        path.lineTo(newPoint.x, newPoint.y)
-                                    }
-                                    EditorTool.SPRAY_PAINT -> {
-                                        repeat(5) {
-                                            val randomX = newPoint.x + (Math.random() - 0.5).toFloat() * brushSize
-                                            val randomY = newPoint.y + (Math.random() - 0.5).toFloat() * brushSize
-                                            path.addCircle(randomX, randomY, 2f, Path.Direction.CW)
-                                        }
-                                    }
-                                    else -> {}
-                                }
-                            }
-                            lastPoint = newPoint
-                            onDrawingChanged()
-                        },
-                        onDragEnd = {
-                            lastPoint = null
-                            drawingPoints = emptyList()
-                            // Commit the path to the bitmap
-                            canvasBitmap?.let { bmp ->
-                                val canvas = Canvas(bmp)
-                                val paint = Paint().apply {
-                                    isAntiAlias = true
-                                    color = when (currentTool) {
-                                        EditorTool.ERASER -> android.graphics.Color.TRANSPARENT
-                                        else -> selectedColor.copy(alpha = opacity).toArgb()
-                                    }
-                                    style = Paint.Style.STROKE
-                                    strokeWidth = brushSize
-                                    strokeCap = Paint.Cap.ROUND
-                                    strokeJoin = Paint.Join.ROUND
-                                    xfermode = if (currentTool == EditorTool.ERASER) android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR) else null
-                                }
-                                // Convert Compose path to Android path
-                                val androidPath = android.graphics.Path()
-                                val pathPoints = path.asComposePath().asAndroidPathPoints()
-                                if (pathPoints.isNotEmpty()) {
-                                    androidPath.moveTo(pathPoints[0].x, pathPoints[0].y)
-                                    for (i in 1 until pathPoints.size) {
-                                        androidPath.lineTo(pathPoints[i].x, pathPoints[i].y)
-                                    }
-                                    canvas.drawPath(androidPath, paint)
-                                }
-                                onBitmapUpdated(bmp.copy(bmp.config, true))
-                            }
-                            path.reset()
-                        }
-                    )
-                }
-        ) {
-            val canvasW = size.width
-            val canvasH = size.height
-            val scaleToFit = minOf(canvasW / bitmapWidth, canvasH / bitmapHeight)
-            val effectiveScale = scaleToFit * scale
-            val imageW = bitmapWidth * effectiveScale
-            val imageH = bitmapHeight * effectiveScale
-            val centerX = canvasW / 2f + offset.x
-            val centerY = canvasH / 2f + offset.y
-            val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
-
-            // Draw the bitmap, pixel-accurate, filling the area, zoomable and pannable
-            canvasBitmap?.let { bmp ->
-                drawImage(
-                    image = bmp.asImageBitmap(),
-                    topLeft = topLeft,
-                    alpha = 1f,
-                    // No dstSize, scale is handled by effectiveScale
-                )
-            }
-            // Draw the current path (apply same transform)
-            when (currentTool) {
-                EditorTool.BRUSH, EditorTool.PENCIL, EditorTool.ERASER, EditorTool.SPRAY_PAINT -> {
-                    withTransform({
-                        translate(centerX - imageW / 2f, centerY - imageH / 2f)
-                        scale(effectiveScale, effectiveScale)
-                    }) {
-                        when (currentTool) {
-                            EditorTool.BRUSH, EditorTool.PENCIL -> {
-                                drawPath(
-                                    path = androidx.compose.ui.graphics.Path().apply {
-                                        addPath(path.asComposePath())
-                                    },
-                                    color = selectedColor.copy(alpha = opacity),
-                                    style = Stroke(
-                                        width = brushSize,
-                                        cap = StrokeCap.Round,
-                                        join = StrokeJoin.Round
-                                    )
-                                )
-                            }
-                            EditorTool.ERASER -> {
-                                drawPath(
-                                    path = androidx.compose.ui.graphics.Path().apply {
-                                        addPath(path.asComposePath())
-                                    },
-                                    color = Color.Transparent,
-                                    style = Stroke(
-                                        width = brushSize,
-                                        cap = StrokeCap.Round,
-                                        join = StrokeJoin.Round
-                                    ),
-                                    blendMode = BlendMode.Clear
-                                )
-                            }
-                            EditorTool.SPRAY_PAINT -> {
-                                drawingPoints.forEach { point ->
-                                    repeat(3) {
-                                        val randomX = point.x + (Math.random() - 0.5).toFloat() * brushSize / 2
-                                        val randomY = point.y + (Math.random() - 0.5).toFloat() * brushSize / 2
-                                        drawCircle(
-                                            color = selectedColor.copy(alpha = opacity * 0.3f),
-                                            radius = 2f,
-                                            center = Offset(randomX, randomY)
-                                        )
-                                    }
-                                }
-                            }
-                            else -> {}
-                        }
-                    }
-                }
-                else -> {}
-            }
-            // Draw brush preview (apply same transform)
-            lastPoint?.let { point ->
-                withTransform({
-                    translate(centerX - imageW / 2f, centerY - imageH / 2f)
-                    scale(effectiveScale, effectiveScale)
-                }) {
-                    when (brushShape) {
-                        BrushShape.ROUND -> {
-                            drawCircle(
-                                color = selectedColor.copy(alpha = 0.3f),
-                                radius = brushSize / 2,
-                                center = point,
-                                style = Stroke(width = 2f)
-                            )
-                        }
-                        BrushShape.SQUARE -> {
-                            drawRect(
-                                color = selectedColor.copy(alpha = 0.3f),
-                                topLeft = Offset(point.x - brushSize / 2, point.y - brushSize / 2),
-                                size = androidx.compose.ui.geometry.Size(brushSize, brushSize),
-                                style = Stroke(width = 2f)
-                            )
-                        }
-                        BrushShape.DIAMOND -> {
-                            val path = androidx.compose.ui.graphics.Path().apply {
-                                moveTo(point.x, point.y - brushSize / 2)
-                                lineTo(point.x + brushSize / 2, point.y)
-                                lineTo(point.x, point.y + brushSize / 2)
-                                lineTo(point.x - brushSize / 2, point.y)
-                                close()
-                            }
-                            drawPath(
-                                path = path,
-                                color = selectedColor.copy(alpha = 0.3f),
-                                style = Stroke(width = 2f)
-                            )
-                        }
-                        BrushShape.STAR -> {
-                            drawCircle(
-                                color = selectedColor.copy(alpha = 0.3f),
-                                radius = brushSize / 2,
-                                center = point,
-                                style = Stroke(width = 2f)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun AdvancedColorPalette(
     selectedColor: Color,
     customColors: List<Color>,
@@ -998,4 +760,94 @@ private fun androidx.compose.ui.graphics.Path.asAndroidPathPoints(): List<Offset
         }
     }
     return points
+}
+
+@Composable
+fun PixelCanvas(
+    bitmap: Bitmap?,
+    modifier: Modifier = Modifier,
+    minDisplaySize: Dp = 256.dp,
+    maxDisplaySize: Dp = 512.dp,
+    checkerColor1: Color = Color(0xFFE0E0E0),
+    checkerColor2: Color = Color(0xFFB0B0B0),
+    initialZoom: Float = 1f,
+    onDraw: ((x: Int, y: Int) -> Unit)? = null // for future drawing logic
+) {
+    var zoom by remember { mutableStateOf(initialZoom) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var canvasSize by remember { mutableStateOf(IntSize(0, 0)) }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .sizeIn(minWidth = minDisplaySize, minHeight = minDisplaySize, maxWidth = maxDisplaySize, maxHeight = maxDisplaySize)
+            .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, gestureZoom, _ ->
+                    zoom = (zoom * gestureZoom).coerceIn(1f, 32f)
+                    offset += pan
+                }
+            }
+    ) {
+        val displayWidth = constraints.maxWidth.toFloat()
+        val displayHeight = constraints.maxHeight.toFloat()
+        val bmp = bitmap
+        val bmpWidth = bmp?.width ?: 16
+        val bmpHeight = bmp?.height ?: 16
+        // Calculate scale to fit the image, then apply zoom
+        val scaleToFit = minOf(displayWidth / bmpWidth, displayHeight / bmpHeight)
+        val scale = scaleToFit * zoom
+        val imageW = bmpWidth * scale
+        val imageH = bmpHeight * scale
+        val centerX = displayWidth / 2f + offset.x
+        val centerY = displayHeight / 2f + offset.y
+        val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
+
+        Canvas(Modifier.fillMaxSize().onGloballyPositioned { canvasSize = it.size }) {
+            // Always draw checkerboard in image pixel space
+            withTransform({
+                translate(topLeft.x, topLeft.y)
+                scale(scale, scale)
+            }) {
+                for (y in 0 until bmpHeight) {
+                    for (x in 0 until bmpWidth) {
+                        val isLight = (x + y) % 2 == 0
+                        drawRect(
+                            color = if (isLight) checkerColor1 else checkerColor2,
+                            topLeft = Offset(x.toFloat(), y.toFloat()),
+                            size = androidx.compose.ui.geometry.Size(1f, 1f)
+                        )
+                    }
+                }
+            }
+            // Draw the bitmap, pixel-perfect, if present
+            bmp?.let {
+                withTransform({
+                    translate(topLeft.x, topLeft.y)
+                    scale(scale, scale)
+                }) {
+                    drawImage(
+                        image = it.asImageBitmap(),
+                        topLeft = Offset.Zero,
+                        alpha = 1f
+                    )
+                }
+            }
+        }
+        // Debug overlay: show bitmap dimensions
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
+            Text(
+                text = "${bmp?.width ?: "?"} x ${bmp?.height ?: "?"}",
+                color = Color.Black,
+                modifier = Modifier
+                    .background(Color.White.copy(alpha = 0.7f))
+                    .padding(4.dp)
+            )
+        }
+        // If bitmap is null, show a visible message
+        if (bmp == null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No image loaded", color = Color.Red, style = androidx.compose.ui.text.TextStyle(fontSize = 20.sp))
+            }
+        }
+    }
 }
