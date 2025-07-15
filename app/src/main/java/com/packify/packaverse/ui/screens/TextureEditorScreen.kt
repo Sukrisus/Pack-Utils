@@ -671,6 +671,12 @@ fun EnhancedTextureCanvas(
                     )
                 }
         ) {
+            // DEBUG: Draw a solid rectangle at the top-left of the canvas (no transform)
+            drawRect(
+                color = Color.Magenta,
+                topLeft = Offset(0f, 0f),
+                size = androidx.compose.ui.geometry.Size(40f, 40f)
+            )
             val canvasW = size.width
             val canvasH = size.height
             // Use virtual image size for scaling, so all images appear the same size
