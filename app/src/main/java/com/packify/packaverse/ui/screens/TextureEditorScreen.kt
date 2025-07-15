@@ -260,7 +260,8 @@ fun TextureEditorScreen(
                             canvasBitmap = bitmap
                             pushUndo(bitmap)
                         },
-                        externalBitmap = canvasBitmap
+                        externalBitmap = canvasBitmap,
+                        onPushUndo = { pushUndo(it) } // pass pushUndo
                     )
                 }
                 // Add color palette below the canvas
@@ -562,7 +563,8 @@ fun EnhancedTextureCanvas(
     opacity: Float,
     onDrawingChanged: () -> Unit,
     onBitmapUpdated: (android.graphics.Bitmap) -> Unit,
-    externalBitmap: android.graphics.Bitmap? = null
+    externalBitmap: android.graphics.Bitmap? = null,
+    onPushUndo: (android.graphics.Bitmap?) -> Unit // new parameter
 ) {
     val density = LocalDensity.current
     var path by remember { mutableStateOf(Path()) }
@@ -606,6 +608,8 @@ fun EnhancedTextureCanvas(
                             drawingPoints = listOf((offset - canvasCenter) / scale)
                             path.reset()
                             path.moveTo((offset - canvasCenter).x / scale, (offset - canvasCenter).y / scale)
+                            // Push undo at the start of a drag
+                            onPushUndo(canvasBitmap)
                         },
                         onDrag = { change, _ ->
                             change.consume()
@@ -615,11 +619,35 @@ fun EnhancedTextureCanvas(
 
                             lastPoint?.let { last ->
                                 when (currentTool) {
-                                    EditorTool.BRUSH, EditorTool.PENCIL -> {
+                                    EditorTool.BRUSH, EditorTool.PENCIL, EditorTool.ERASER -> {
                                         path.lineTo(newPoint.x, newPoint.y)
-                                    }
-                                    EditorTool.ERASER -> {
-                                        path.lineTo(newPoint.x, newPoint.y)
+                                        // Commit the path to the bitmap in real-time
+                                        canvasBitmap?.let { bmp ->
+                                            val canvas = Canvas(bmp)
+                                            val paint = Paint().apply {
+                                                isAntiAlias = true
+                                                color = when (currentTool) {
+                                                    EditorTool.ERASER -> android.graphics.Color.TRANSPARENT
+                                                    else -> selectedColor.copy(alpha = opacity).toArgb()
+                                                }
+                                                style = Paint.Style.STROKE
+                                                strokeWidth = brushSize
+                                                strokeCap = Paint.Cap.ROUND
+                                                strokeJoin = Paint.Join.ROUND
+                                                xfermode = if (currentTool == EditorTool.ERASER) android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR) else null
+                                            }
+                                            // Convert Compose path to Android path
+                                            val androidPath = android.graphics.Path()
+                                            val pathPoints = path.asComposePath().asAndroidPathPoints()
+                                            if (pathPoints.isNotEmpty()) {
+                                                androidPath.moveTo(pathPoints[0].x, pathPoints[0].y)
+                                                for (i in 1 until pathPoints.size) {
+                                                    androidPath.lineTo(pathPoints[i].x, pathPoints[i].y)
+                                                }
+                                                canvas.drawPath(androidPath, paint)
+                                            }
+                                            onBitmapUpdated(bmp.copy(bmp.config, true))
+                                        }
                                     }
                                     EditorTool.SPRAY_PAINT -> {
                                         repeat(5) {
@@ -637,33 +665,6 @@ fun EnhancedTextureCanvas(
                         onDragEnd = {
                             lastPoint = null
                             drawingPoints = emptyList()
-                            // Commit the path to the bitmap
-                            canvasBitmap?.let { bmp ->
-                                val canvas = Canvas(bmp)
-                                val paint = Paint().apply {
-                                    isAntiAlias = true
-                                    color = when (currentTool) {
-                                        EditorTool.ERASER -> android.graphics.Color.TRANSPARENT
-                                        else -> selectedColor.copy(alpha = opacity).toArgb()
-                                    }
-                                    style = Paint.Style.STROKE
-                                    strokeWidth = brushSize
-                                    strokeCap = Paint.Cap.ROUND
-                                    strokeJoin = Paint.Join.ROUND
-                                    xfermode = if (currentTool == EditorTool.ERASER) android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR) else null
-                                }
-                                // Convert Compose path to Android path
-                                val androidPath = android.graphics.Path()
-                                val pathPoints = path.asComposePath().asAndroidPathPoints()
-                                if (pathPoints.isNotEmpty()) {
-                                    androidPath.moveTo(pathPoints[0].x, pathPoints[0].y)
-                                    for (i in 1 until pathPoints.size) {
-                                        androidPath.lineTo(pathPoints[i].x, pathPoints[i].y)
-                                    }
-                                    canvas.drawPath(androidPath, paint)
-                                }
-                                onBitmapUpdated(bmp.copy(bmp.config, true))
-                            }
                             path.reset()
                         }
                     )
