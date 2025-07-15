@@ -625,15 +625,15 @@ fun EnhancedTextureCanvas(
                                         canvasBitmap?.let { bmp ->
                                             val canvas = Canvas(bmp)
                                             val paint = Paint().apply {
-                                                isAntiAlias = true
+                                                isAntiAlias = false // pixel-perfect
                                                 color = when (currentTool) {
                                                     EditorTool.ERASER -> android.graphics.Color.TRANSPARENT
                                                     else -> selectedColor.copy(alpha = opacity).toArgb()
                                                 }
                                                 style = Paint.Style.STROKE
                                                 strokeWidth = brushSize
-                                                strokeCap = Paint.Cap.ROUND
-                                                strokeJoin = Paint.Join.ROUND
+                                                strokeCap = Paint.Cap.BUTT // pixel-perfect
+                                                strokeJoin = Paint.Join.MITER // pixel-perfect
                                                 xfermode = if (currentTool == EditorTool.ERASER) android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR) else null
                                             }
                                             // Convert Compose path to Android path
@@ -681,7 +681,23 @@ fun EnhancedTextureCanvas(
             val centerY = canvasH / 2f + offset.y
             val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
 
-            // Draw the bitmap, scaled to fill the virtual image size
+            // 1. Draw checkerboard background
+            val checkerSize = 16f * effectiveScale
+            for (y in 0 until imageH.toInt() step checkerSize.toInt()) {
+                for (x in 0 until imageW.toInt() step checkerSize.toInt()) {
+                    val isLight = ((x / checkerSize).toInt() + (y / checkerSize).toInt()) % 2 == 0
+                    drawRect(
+                        color = if (isLight) Color(0xFFE0E0E0) else Color(0xFFB0B0B0),
+                        topLeft = topLeft + Offset(x.toFloat(), y.toFloat()),
+                        size = androidx.compose.ui.geometry.Size(
+                            minOf(checkerSize, imageW - x),
+                            minOf(checkerSize, imageH - y)
+                        )
+                    )
+                }
+            }
+
+            // 2. Draw the bitmap, scaled to fill the virtual image size, pixel-perfect
             canvasBitmap?.let { bmp ->
                 withTransform({
                     translate(centerX - imageW / 2f, centerY - imageH / 2f)
