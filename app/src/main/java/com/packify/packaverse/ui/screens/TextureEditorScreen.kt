@@ -685,8 +685,7 @@ fun EnhancedTextureCanvas(
                 drawImage(
                     image = bmp.asImageBitmap(),
                     topLeft = topLeft,
-                    alpha = 1f,
-                    dstSize = IntSize(imageW.toInt(), imageH.toInt()) // Force all images to same display size
+                    alpha = 1f
                 )
             }
             // Draw the current path (apply same transform)
