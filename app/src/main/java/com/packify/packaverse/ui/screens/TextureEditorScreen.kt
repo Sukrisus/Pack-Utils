@@ -1035,3 +1035,82 @@ private fun androidx.compose.ui.graphics.Path.asAndroidPathPoints(): List<Offset
     }
     return points
 }
+
+@Composable
+fun PixelCanvas(
+    bitmap: Bitmap?,
+    modifier: Modifier = Modifier,
+    minDisplaySize: Dp = 256.dp,
+    maxDisplaySize: Dp = 512.dp,
+    checkerColor1: Color = Color(0xFFE0E0E0),
+    checkerColor2: Color = Color(0xFFB0B0B0),
+    initialZoom: Float = 1f,
+    onDraw: ((x: Int, y: Int) -> Unit)? = null // for future drawing logic
+) {
+    var zoom by remember { mutableStateOf(initialZoom) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var canvasSize by remember { mutableStateOf(IntSize(0, 0)) }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .sizeIn(minWidth = minDisplaySize, minHeight = minDisplaySize, maxWidth = maxDisplaySize, maxHeight = maxDisplaySize)
+            .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, gestureZoom, _ ->
+                    zoom = (zoom * gestureZoom).coerceIn(1f, 32f)
+                    offset += pan
+                }
+            }
+    ) {
+        val displayWidth = constraints.maxWidth.toFloat()
+        val displayHeight = constraints.maxHeight.toFloat()
+        val bmp = bitmap
+        if (bmp != null) {
+            val bmpWidth = bmp.width
+            val bmpHeight = bmp.height
+            // Calculate scale to fit the image, then apply zoom
+            val scaleToFit = minOf(displayWidth / bmpWidth, displayHeight / bmpHeight)
+            val scale = scaleToFit * zoom
+            val imageW = bmpWidth * scale
+            val imageH = bmpHeight * scale
+            val centerX = displayWidth / 2f + offset.x
+            val centerY = displayHeight / 2f + offset.y
+            val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
+
+            Canvas(Modifier.fillMaxSize().onGloballyPositioned { canvasSize = it.size }) {
+                // Draw checkerboard in image pixel space
+                withTransform({
+                    translate(topLeft.x, topLeft.y)
+                    scale(scale, scale)
+                }) {
+                    for (y in 0 until bmpHeight) {
+                        for (x in 0 until bmpWidth) {
+                            val isLight = (x + y) % 2 == 0
+                            drawRect(
+                                color = if (isLight) checkerColor1 else checkerColor2,
+                                topLeft = Offset(x.toFloat(), y.toFloat()),
+                                size = androidx.compose.ui.geometry.Size(1f, 1f)
+                            )
+                        }
+                    }
+                }
+                // Draw the bitmap, pixel-perfect
+                withTransform({
+                    translate(topLeft.x, topLeft.y)
+                    scale(scale, scale)
+                }) {
+                    drawImage(
+                        image = bmp.asImageBitmap(),
+                        topLeft = Offset.Zero,
+                        alpha = 1f
+                    )
+                }
+            }
+        } else {
+            // Show a message if no bitmap
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No image loaded", color = Color.White)
+            }
+        }
+    }
+}
