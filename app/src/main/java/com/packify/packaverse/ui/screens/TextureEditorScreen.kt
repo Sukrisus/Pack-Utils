@@ -791,51 +791,62 @@ fun PixelCanvas(
         val displayWidth = constraints.maxWidth.toFloat()
         val displayHeight = constraints.maxHeight.toFloat()
         val bmp = bitmap
-        if (bmp != null) {
-            val bmpWidth = bmp.width
-            val bmpHeight = bmp.height
-            // Calculate scale to fit the image, then apply zoom
-            val scaleToFit = minOf(displayWidth / bmpWidth, displayHeight / bmpHeight)
-            val scale = scaleToFit * zoom
-            val imageW = bmpWidth * scale
-            val imageH = bmpHeight * scale
-            val centerX = displayWidth / 2f + offset.x
-            val centerY = displayHeight / 2f + offset.y
-            val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
+        val bmpWidth = bmp?.width ?: 16
+        val bmpHeight = bmp?.height ?: 16
+        // Calculate scale to fit the image, then apply zoom
+        val scaleToFit = minOf(displayWidth / bmpWidth, displayHeight / bmpHeight)
+        val scale = scaleToFit * zoom
+        val imageW = bmpWidth * scale
+        val imageH = bmpHeight * scale
+        val centerX = displayWidth / 2f + offset.x
+        val centerY = displayHeight / 2f + offset.y
+        val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
 
-            Canvas(Modifier.fillMaxSize().onGloballyPositioned { canvasSize = it.size }) {
-                // Draw checkerboard in image pixel space
-                withTransform({
-                    translate(topLeft.x, topLeft.y)
-                    scale(scale, scale)
-                }) {
-                    for (y in 0 until bmpHeight) {
-                        for (x in 0 until bmpWidth) {
-                            val isLight = (x + y) % 2 == 0
-                            drawRect(
-                                color = if (isLight) checkerColor1 else checkerColor2,
-                                topLeft = Offset(x.toFloat(), y.toFloat()),
-                                size = androidx.compose.ui.geometry.Size(1f, 1f)
-                            )
-                        }
+        Canvas(Modifier.fillMaxSize().onGloballyPositioned { canvasSize = it.size }) {
+            // Always draw checkerboard in image pixel space
+            withTransform({
+                translate(topLeft.x, topLeft.y)
+                scale(scale, scale)
+            }) {
+                for (y in 0 until bmpHeight) {
+                    for (x in 0 until bmpWidth) {
+                        val isLight = (x + y) % 2 == 0
+                        drawRect(
+                            color = if (isLight) checkerColor1 else checkerColor2,
+                            topLeft = Offset(x.toFloat(), y.toFloat()),
+                            size = androidx.compose.ui.geometry.Size(1f, 1f)
+                        )
                     }
                 }
-                // Draw the bitmap, pixel-perfect
+            }
+            // Draw the bitmap, pixel-perfect, if present
+            bmp?.let {
                 withTransform({
                     translate(topLeft.x, topLeft.y)
                     scale(scale, scale)
                 }) {
                     drawImage(
-                        image = bmp.asImageBitmap(),
+                        image = it.asImageBitmap(),
                         topLeft = Offset.Zero,
                         alpha = 1f
                     )
                 }
             }
-        } else {
-            // Show a message if no bitmap
+        }
+        // Debug overlay: show bitmap dimensions
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
+            Text(
+                text = "${bmp?.width ?: "?"} x ${bmp?.height ?: "?"}",
+                color = Color.Black,
+                modifier = Modifier
+                    .background(Color.White.copy(alpha = 0.7f))
+                    .padding(4.dp)
+            )
+        }
+        // If bitmap is null, show a visible message
+        if (bmp == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No image loaded", color = Color.White)
+                Text("No image loaded", color = Color.Red, style = androidx.compose.ui.text.TextStyle(fontSize = 20.sp))
             }
         }
     }
