@@ -583,7 +583,7 @@ fun EnhancedTextureCanvas(
     ) {
         val canvasModifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(aspectRatio) // Maintain image aspect ratio
+            .aspectRatio(1f) // Always square
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     scale = (scale * zoom).coerceIn(0.5f, 16f)
@@ -670,28 +670,25 @@ fun EnhancedTextureCanvas(
             val canvasW = size.width
             val canvasH = size.height
             val scaleToFit = canvasW / bitmapWidth // Always scale to fill width
-            val effectiveScale = scaleToFit * scale
-            val imageW = bitmapWidth * effectiveScale
-            val imageH = bitmapHeight * effectiveScale
-            val centerX = canvasW / 2f + offset.x
-            val centerY = canvasH / 2f + offset.y
-            val topLeft = Offset(centerX - imageW / 2f, centerY - imageH / 2f)
+            val imageW = bitmapWidth * scaleToFit
+            val imageH = bitmapHeight * scaleToFit
+            val topLeft = Offset(0f, (canvasH - imageH) / 2f) // Center vertically
 
-            // Draw the bitmap, pixel-accurate, filling the area, zoomable and pannable
+            // Draw the bitmap, pixel-accurate, filling the area, horizontally stretched, vertically centered
             canvasBitmap?.let { bmp ->
                 drawImage(
                     image = bmp.asImageBitmap(),
                     topLeft = topLeft,
                     alpha = 1f,
-                    // No dstSize, scale is handled by effectiveScale
+                    // No dstSize, scale is handled by scaleToFit
                 )
             }
             // Draw the current path (apply same transform)
             when (currentTool) {
                 EditorTool.BRUSH, EditorTool.PENCIL, EditorTool.ERASER, EditorTool.SPRAY_PAINT -> {
                     withTransform({
-                        translate(centerX - imageW / 2f, centerY - imageH / 2f)
-                        scale(effectiveScale, effectiveScale)
+                        translate(0f, (canvasH - imageH) / 2f)
+                        scale(scaleToFit, scaleToFit)
                     }) {
                         when (currentTool) {
                             EditorTool.BRUSH, EditorTool.PENCIL -> {
@@ -743,8 +740,8 @@ fun EnhancedTextureCanvas(
             // Draw brush preview (apply same transform)
             lastPoint?.let { point ->
                 withTransform({
-                    translate(centerX - imageW / 2f, centerY - imageH / 2f)
-                    scale(effectiveScale, effectiveScale)
+                    translate(0f, (canvasH - imageH) / 2f)
+                    scale(scaleToFit, scaleToFit)
                 }) {
                     when (brushShape) {
                         BrushShape.ROUND -> {
