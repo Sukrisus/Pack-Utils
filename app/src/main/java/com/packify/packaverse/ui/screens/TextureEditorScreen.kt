@@ -655,6 +655,12 @@ fun EnhancedTextureCanvas(
                                     androidPath.lineTo(pathPoints[i].x, pathPoints[i].y)
                                 }
                                 canvas.drawPath(androidPath, paint)
+                            } else {
+                                // If path is too short, draw a dot at the start point
+                                val start = lastPoint
+                                if (start != null) {
+                                    canvas.drawCircle(start.x, start.y, brushSize / 2, paint)
+                                }
                             }
                             onBitmapUpdated(bmp.copy(bmp.config, true))
                         }
