@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.material.icons.filled.AutoFixOff
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -121,7 +122,6 @@ fun TextureEditorScreen(
         if (undoStack.isNotEmpty()) {
             redoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
             canvasBitmap = undoStack.removeAt(undoStack.lastIndex)
-            // No onBitmapUpdated here; just update canvasBitmap
         }
     }
 
@@ -129,7 +129,6 @@ fun TextureEditorScreen(
         if (redoStack.isNotEmpty()) {
             undoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
             canvasBitmap = redoStack.removeAt(redoStack.lastIndex)
-            // No onBitmapUpdated here; just update canvasBitmap
         }
     }
 
@@ -168,10 +167,10 @@ fun TextureEditorScreen(
                     IconButton(onClick = { showImportDialog = true }) {
                         Icon(Icons.Default.Upload, contentDescription = "Import from Device")
                     }
-                    IconButton(onClick = { undo() }) {
+                    IconButton(onClick = { undo() }, enabled = undoStack.isNotEmpty()) {
                         Icon(Icons.Default.Undo, contentDescription = "Undo")
                     }
-                    IconButton(onClick = { redo() }) {
+                    IconButton(onClick = { redo() }, enabled = redoStack.isNotEmpty()) {
                         Icon(Icons.Default.Redo, contentDescription = "Redo")
                     }
                     IconButton(onClick = {
@@ -210,7 +209,7 @@ fun TextureEditorScreen(
                     Icon(Icons.Default.Brush, contentDescription = "Brush")
                 }
                 IconButton(onClick = { currentTool = EditorTool.ERASER }) {
-                    Icon(Icons.Default.Clear, contentDescription = "Eraser")
+                    Icon(Icons.Filled.AutoFixOff, contentDescription = "Eraser")
                 }
                 IconButton(onClick = { showColorPicker = true }) {
                     Icon(Icons.Default.ColorLens, contentDescription = "Color Picker")
@@ -493,7 +492,7 @@ fun AdvancedToolButton(
 ) {
     val (icon, description) = when (tool) {
         EditorTool.BRUSH -> Icons.Default.Brush to "Paint Brush"
-        EditorTool.ERASER -> Icons.Default.Clear to "Eraser"
+        EditorTool.ERASER -> Icons.Filled.AutoFixOff to "Eraser"
         EditorTool.COLOR_PICKER -> Icons.Default.ColorLens to "Color Picker"
         EditorTool.FILL -> Icons.Default.FormatPaint to "Fill Tool"
         EditorTool.SPRAY_PAINT -> Icons.Default.Grain to "Spray Paint"
