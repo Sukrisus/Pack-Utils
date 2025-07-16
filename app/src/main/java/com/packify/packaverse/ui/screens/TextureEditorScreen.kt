@@ -578,12 +578,11 @@ fun EnhancedTextureCanvas(
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     Box(
-        modifier = Modifier.fillMaxWidth(), // Fill width only
+        modifier = Modifier.fillMaxSize(), // Fill all available space
         contentAlignment = Alignment.Center
     ) {
         val canvasModifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f) // Always square
+            .fillMaxSize() // Fill all available space in the Box
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     scale = (scale * zoom).coerceIn(0.5f, 16f)
