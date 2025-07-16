@@ -121,6 +121,7 @@ fun TextureEditorScreen(
         if (undoStack.isNotEmpty()) {
             redoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
             canvasBitmap = undoStack.removeAt(undoStack.lastIndex)
+            // No onBitmapUpdated here; just update canvasBitmap
         }
     }
 
@@ -128,10 +129,21 @@ fun TextureEditorScreen(
         if (redoStack.isNotEmpty()) {
             undoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
             canvasBitmap = redoStack.removeAt(redoStack.lastIndex)
+            // No onBitmapUpdated here; just update canvasBitmap
         }
     }
 
+    // Palette persistence: sync with ViewModel
+    val palette by viewModel.customPalette.collectAsState()
     val customColorsState = remember { mutableStateListOf<Color>() }
+    LaunchedEffect(palette) {
+        customColorsState.clear()
+        customColorsState.addAll(palette.map { Color(it) })
+    }
+    fun savePalette() {
+        viewModel.saveCustomPalette(customColorsState.map { it.value.toInt() })
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -270,6 +282,7 @@ fun TextureEditorScreen(
                     onAddCustomColor = { color ->
                         if (!customColorsState.contains(color)) {
                             customColorsState.add(color)
+                            savePalette()
                         }
                         selectedColor = color
                     }
@@ -283,6 +296,7 @@ fun TextureEditorScreen(
                 onColorSelected = { color ->
                     if (!customColorsState.contains(color)) {
                         customColorsState.add(color)
+                        savePalette()
                     }
                     selectedColor = color
                     showColorPicker = false
@@ -593,6 +607,16 @@ fun EnhancedTextureCanvas(
                                     canvas.drawCircle(bmpX, bmpY, brushSize / 2, paint)
                                     onBitmapUpdated(bitmap.copy(bitmap.config, true))
                                     onDrawingChanged()
+                                } else if (currentTool == EditorTool.ERASER) {
+                                    val canvas = Canvas(bitmap)
+                                    val paint = Paint().apply {
+                                        isAntiAlias = false
+                                        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                                        style = Paint.Style.FILL
+                                    }
+                                    canvas.drawCircle(bmpX, bmpY, brushSize / 2, paint)
+                                    onBitmapUpdated(bitmap.copy(bitmap.config, true))
+                                    onDrawingChanged()
                                 }
                             },
                             onDrag = { change, _ ->
@@ -612,6 +636,18 @@ fun EnhancedTextureCanvas(
                                     canvas.drawLine(prev.x, prev.y, bmpX, bmpY, paint)
                                     onBitmapUpdated(bitmap.copy(bitmap.config, true))
                                     onDrawingChanged()
+                                } else if (prev != null && currentTool == EditorTool.ERASER) {
+                                    val canvas = Canvas(bitmap)
+                                    val paint = Paint().apply {
+                                        isAntiAlias = false
+                                        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                                        style = Paint.Style.STROKE
+                                        strokeWidth = brushSize
+                                        strokeCap = Paint.Cap.ROUND
+                                    }
+                                    canvas.drawLine(prev.x, prev.y, bmpX, bmpY, paint)
+                                    onBitmapUpdated(bitmap.copy(bitmap.config, true))
+                                    onDrawingChanged()
                                 }
                                 lastPoint = Offset(bmpX, bmpY)
                             },
@@ -623,7 +659,8 @@ fun EnhancedTextureCanvas(
             ) {
                 drawImage(
                     image = bitmap.asImageBitmap(),
-                    dstSize = IntSize(size.width.toInt(), size.height.toInt())
+                    dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                    filterQuality = FilterQuality.None // Pixelated rendering
                 )
             }
         }
