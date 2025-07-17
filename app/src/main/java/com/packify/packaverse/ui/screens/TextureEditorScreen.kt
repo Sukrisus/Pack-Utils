@@ -49,6 +49,9 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.material.icons.filled.AutoFixOff
+import androidx.compose.ui.res.painterResource
+import com.packify.packaverse.R
+import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -209,7 +212,7 @@ fun TextureEditorScreen(
                     Icon(Icons.Default.Brush, contentDescription = "Brush")
                 }
                 IconButton(onClick = { currentTool = EditorTool.ERASER }) {
-                    Icon(Icons.Filled.AutoFixOff, contentDescription = "Eraser")
+                    Icon(painterResource(id = R.drawable.ic_eraser), contentDescription = "Eraser")
                 }
                 IconButton(onClick = { showColorPicker = true }) {
                     Icon(Icons.Default.ColorLens, contentDescription = "Color Picker")
@@ -492,7 +495,7 @@ fun AdvancedToolButton(
 ) {
     val (icon, description) = when (tool) {
         EditorTool.BRUSH -> Icons.Default.Brush to "Paint Brush"
-        EditorTool.ERASER -> Icons.Filled.AutoFixOff to "Eraser"
+        EditorTool.ERASER -> painterResource(id = R.drawable.ic_eraser) to "Eraser"
         EditorTool.COLOR_PICKER -> Icons.Default.ColorLens to "Color Picker"
         EditorTool.FILL -> Icons.Default.FormatPaint to "Fill Tool"
         EditorTool.SPRAY_PAINT -> Icons.Default.Grain to "Spray Paint"
@@ -513,12 +516,20 @@ fun AdvancedToolButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = description,
-                tint = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
-            )
+            when (tool) {
+                EditorTool.ERASER -> Icon(
+                    painter = painterResource(id = R.drawable.ic_eraser),
+                    contentDescription = description,
+                    tint = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+                else -> Icon(
+                    imageVector = icon as ImageVector,
+                    contentDescription = description,
+                    tint = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
             Text(
                 text = description.take(4),
                 fontSize = 10.sp,
