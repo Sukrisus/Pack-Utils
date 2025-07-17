@@ -188,6 +188,11 @@ fun PackifyApp() {
                     if (selectedPackId.isNotEmpty()) {
                         navController.navigate("texture_management/$selectedPackId/${category.name}")
                     }
+                },
+                onNavigateToHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 }
             )
         }

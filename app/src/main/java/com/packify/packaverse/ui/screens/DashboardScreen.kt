@@ -38,7 +38,8 @@ fun DashboardScreen(
     viewModel: TexturePackViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToCategory: (TextureCategory) -> Unit
+    onNavigateToCategory: (TextureCategory) -> Unit,
+    onNavigateToHome: () -> Unit // Add this parameter
 ) {
     val categories = listOf(
         TextureCategory.ENTITY,
@@ -53,7 +54,7 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Addons Maker for Minecraft", style = MaterialTheme.typography.titleLarge) },
+                title = { Text("Dashboard", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -68,7 +69,7 @@ fun DashboardScreen(
         },
         bottomBar = {
             BottomNavigationBar(
-                onNavigateToHome = { /* TODO: Implement navigation to Home */ },
+                onNavigateToHome = onNavigateToHome,
                 onNavigateToDashboard = {},
                 onNavigateToSettings = onNavigateToSettings,
                 currentRoute = "dashboard"
