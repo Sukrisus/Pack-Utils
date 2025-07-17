@@ -271,9 +271,10 @@ fun TextureEditorScreen(
                         },
                         onBitmapUpdated = { bitmap ->
                             canvasBitmap = bitmap
-                            pushUndo(bitmap)
                         },
-                        externalBitmap = canvasBitmap
+                        externalBitmap = canvasBitmap,
+                        pushUndo = { bmp -> pushUndo(bmp) },
+                        clearRedo = { redoStack.clear() }
                     )
                 }
                 // Add color palette below the canvas
@@ -585,7 +586,9 @@ fun EnhancedTextureCanvas(
     opacity: Float,
     onDrawingChanged: () -> Unit,
     onBitmapUpdated: (android.graphics.Bitmap) -> Unit,
-    externalBitmap: android.graphics.Bitmap? = null
+    externalBitmap: android.graphics.Bitmap? = null,
+    pushUndo: (android.graphics.Bitmap?) -> Unit,
+    clearRedo: () -> Unit
 ) {
     var canvasBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(externalBitmap) }
     var lastPoint by remember { mutableStateOf<Offset?>(null) }
@@ -604,6 +607,9 @@ fun EnhancedTextureCanvas(
                     .pointerInput(currentTool, brushSize, selectedColor, bitmap) {
                         detectDragGestures(
                             onDragStart = { offset ->
+                                // Push undo and clear redo at the start of every stroke
+                                pushUndo(bitmap)
+                                clearRedo()
                                 val bmpX = (offset.x / canvasSizePx) * bitmap.width
                                 val bmpY = (offset.y / canvasSizePx) * bitmap.height
                                 lastPoint = Offset(bmpX, bmpY)
