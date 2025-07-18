@@ -113,21 +113,23 @@ fun TextureEditorScreen(
         }
     }
 
-    fun pushUndo(bitmap: android.graphics.Bitmap?) {
+    fun pushUndoIfChanged(bitmap: android.graphics.Bitmap?) {
         bitmap?.let {
-            undoStack.add(it.copy(it.config, true))
-            if (undoStack.size > 20) undoStack.removeAt(0)
-            redoStack.clear()
+            if (undoStack.isEmpty() || !it.sameAs(undoStack.last())) {
+                undoStack.add(it.copy(it.config, true))
+                if (undoStack.size > 20) undoStack.removeAt(0)
+            }
         }
     }
-
+    fun clearRedo() {
+        redoStack.clear()
+    }
     fun undo() {
         if (undoStack.isNotEmpty()) {
             redoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
             canvasBitmap = undoStack.removeAt(undoStack.lastIndex)
         }
     }
-
     fun redo() {
         if (redoStack.isNotEmpty()) {
             undoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
@@ -273,8 +275,8 @@ fun TextureEditorScreen(
                             canvasBitmap = bitmap
                         },
                         externalBitmap = canvasBitmap,
-                        pushUndo = { bmp -> pushUndo(bmp) },
-                        clearRedo = { redoStack.clear() }
+                        pushUndo = { bmp -> pushUndoIfChanged(bmp) },
+                        clearRedo = { clearRedo() }
                     )
                 }
                 // Add color palette below the canvas
