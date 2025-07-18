@@ -280,7 +280,7 @@ fun TextureEditorScreen(
                     )
                 }
                 // Add color palette below the canvas
-                AdvancedColorPalette(
+                ModernPalette(
                     selectedColor = selectedColor,
                     customColors = customColorsState,
                     onColorSelected = { color -> selectedColor = color },
@@ -686,115 +686,167 @@ fun EnhancedTextureCanvas(
 }
 
 @Composable
-fun AdvancedColorPalette(
+fun ModernPalette(
     selectedColor: Color,
     customColors: List<Color>,
     onColorSelected: (Color) -> Unit,
     onAddCustomColor: (Color) -> Unit
 ) {
-    var showColorWheelDialog by remember { mutableStateOf(false) }
-
-    val colors = listOf(
-        Color.Red, Color.Green, Color.Blue, Color.Yellow,
-        Color.Cyan, Color.Magenta, Color.Black, Color.White,
-        Color.Gray, Color.DarkGray, Color.LightGray,
-        Color(0xFFFF8C00), Color(0xFF9370DB), Color(0xFF20B2AA),
-        Color(0xFFDC143C), Color(0xFF228B22), Color(0xFF4B0082)
-    ) + customColors
-
-    Card(
+    var showColorDialog by remember { mutableStateOf(false) }
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+            .padding(16.dp)
     ) {
+        Text(
+            text = "Palette",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        // Palette grid
+        val colors = listOf(
+            Color.Red, Color.Green, Color.Blue, Color.Yellow,
+            Color.Cyan, Color.Magenta, Color.Black, Color.White,
+            Color.Gray, Color.DarkGray, Color.LightGray,
+            Color(0xFFFF8C00), Color(0xFF9370DB), Color(0xFF20B2AA),
+            Color(0xFFDC143C), Color(0xFF228B22), Color(0xFF4B0082)
+        ) + customColors
+        val rows = colors.chunked(6)
         Column(
-            modifier = Modifier.padding(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Color Palette",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(colors) { color ->
-                    ColorButton(
-                        color = color,
-                        isSelected = selectedColor == color,
-                        onClick = { onColorSelected(color) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Add Custom Color",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
-                )
-
-                // New button to open color wheel dialog
-                Button(
-                    onClick = { showColorWheelDialog = true },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFB6C1),
-                        contentColor = Color.White
-                    ),
-                    shape = CircleShape
+            rows.forEach { rowColors ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Custom Color",
-                        modifier = Modifier.size(16.dp)
-                    )
+                    rowColors.forEach { color ->
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(color, CircleShape)
+                                .border(
+                                    width = if (selectedColor == color) 4.dp else 2.dp,
+                                    color = if (selectedColor == color) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.outline,
+                                    shape = CircleShape
+                                )
+                                .clickable { onColorSelected(color) }
+                        )
+                    }
                 }
             }
         }
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(
+            onClick = { showColorDialog = true },
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFFB6C1),
+                contentColor = Color.White
+            )
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Add Color")
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Add Color")
+        }
     }
-
-    // Color wheel dialog
-    if (showColorWheelDialog) {
-        ColorWheelDialog(
+    if (showColorDialog) {
+        ModernColorSelectorDialog(
             palette = customColors,
             onAddColor = { color ->
                 onAddCustomColor(color)
-                showColorWheelDialog = false
+                showColorDialog = false
             },
-            onDismiss = { showColorWheelDialog = false }
+            onDismiss = { showColorDialog = false }
         )
     }
 }
 
 @Composable
-fun ColorButton(
-    color: Color,
-    isSelected: Boolean,
-    onClick: () -> Unit
+fun ModernColorSelectorDialog(
+    palette: List<Color>,
+    onAddColor: (Color) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .background(color, CircleShape)
-            .border(
-                width = if (isSelected) 3.dp else 1.dp,
-                color = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.outline,
-                shape = CircleShape
-            )
-            .clickable { onClick() }
+    var hue by remember { mutableStateOf(0f) }
+    var saturation by remember { mutableStateOf(1f) }
+    var value by remember { mutableStateOf(1f) }
+    val color = Color.hsv(hue, saturation, value)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Color") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Large color preview
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(color, CircleShape)
+                        .border(2.dp, Color.Black, CircleShape)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                // Hue slider
+                Text("Hue: ${hue.toInt()}")
+                Slider(
+                    value = hue,
+                    onValueChange = { hue = it },
+                    valueRange = 0f..360f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, 1f, 1f),
+                        activeTrackColor = Color.hsv(hue, 1f, 1f)
+                    )
+                )
+                // Saturation slider
+                Text("Saturation: ${(saturation * 100).toInt()}%")
+                Slider(
+                    value = saturation,
+                    onValueChange = { saturation = it },
+                    valueRange = 0f..1f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, saturation, 1f),
+                        activeTrackColor = Color.hsv(hue, saturation, 1f)
+                    )
+                )
+                // Value/Brightness slider
+                Text("Brightness: ${(value * 100).toInt()}%")
+                Slider(
+                    value = value,
+                    onValueChange = { value = it },
+                    valueRange = 0f..1f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, 1f, value),
+                        activeTrackColor = Color.hsv(hue, 1f, value)
+                    )
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Palette:")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(palette) { c ->
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(c, CircleShape)
+                                .border(2.dp, Color.Black, CircleShape)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onAddColor(Color.hsv(hue, saturation, value)) }) {
+                Icon(Icons.Default.Add, contentDescription = "Add Color")
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
     )
 }
 
@@ -892,88 +944,21 @@ fun AdvancedColorPickerDialog(
 }
 
 @Composable
-fun ColorWheelDialog(
-    palette: List<Color>,
-    onAddColor: (Color) -> Unit,
-    onDismiss: () -> Unit
+fun ColorButton(
+    color: Color,
+    isSelected: Boolean,
+    onClick: () -> Unit
 ) {
-    // Use a single HSV state
-    var hue by remember { mutableStateOf(0f) }
-    var saturation by remember { mutableStateOf(1f) }
-    var value by remember { mutableStateOf(1f) }
-    val color = Color.hsv(hue, saturation, value)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Pick a Color") },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // Large color preview
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(color, CircleShape)
-                        .border(2.dp, Color.Black, CircleShape)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                // Hue slider
-                Text("Hue: ${hue.toInt()}")
-                Slider(
-                    value = hue,
-                    onValueChange = { hue = it },
-                    valueRange = 0f..360f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, 1f, 1f),
-                        activeTrackColor = Color.hsv(hue, 1f, 1f)
-                    )
-                )
-                // Saturation slider
-                Text("Saturation: ${(saturation * 100).toInt()}%")
-                Slider(
-                    value = saturation,
-                    onValueChange = { saturation = it },
-                    valueRange = 0f..1f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, saturation, 1f),
-                        activeTrackColor = Color.hsv(hue, saturation, 1f)
-                    )
-                )
-                // Value/Brightness slider
-                Text("Brightness: ${(value * 100).toInt()}%")
-                Slider(
-                    value = value,
-                    onValueChange = { value = it },
-                    valueRange = 0f..1f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, 1f, value),
-                        activeTrackColor = Color.hsv(hue, 1f, value)
-                    )
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Palette:")
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(palette) { c ->
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(c, CircleShape)
-                                .border(2.dp, Color.Black, CircleShape)
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onAddColor(Color.hsv(hue, saturation, value)) }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Color")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Add")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .background(color, CircleShape)
+            .border(
+                width = if (isSelected) 3.dp else 1.dp,
+                color = if (isSelected) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.outline,
+                shape = CircleShape
+            )
+            .clickable { onClick() }
     )
 }
 
