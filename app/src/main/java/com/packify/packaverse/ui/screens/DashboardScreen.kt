@@ -290,6 +290,7 @@ fun PackSelectionCard(
 ) {
     var selectedPack by remember { mutableStateOf(texturePacks.firstOrNull()) }
     var showPackDialog by remember { mutableStateOf(false) }
+    var tempSelectedPack by remember { mutableStateOf(selectedPack) }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -344,11 +345,12 @@ fun PackSelectionCard(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 4.dp)
+                                .clickable { tempSelectedPack = pack },
                             colors = CardDefaults.cardColors(
-                                containerColor = if (selectedPack?.id == pack.id) 
-                                    Color(0xFFFFB6C1).copy(alpha = 0.3f) 
-                                else 
+                                containerColor = if (tempSelectedPack?.id == pack.id)
+                                    Color(0xFFFFB6C1).copy(alpha = 0.3f)
+                                else
                                     MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
@@ -375,7 +377,8 @@ fun PackSelectionCard(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        selectedPack?.let { pack ->
+                        tempSelectedPack?.let { pack ->
+                            selectedPack = pack
                             onPackSelected(pack.id)
                         }
                         showPackDialog = false
