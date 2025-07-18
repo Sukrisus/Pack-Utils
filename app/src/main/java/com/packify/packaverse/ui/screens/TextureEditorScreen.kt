@@ -693,70 +693,55 @@ fun ModernPalette(
     onAddCustomColor: (Color) -> Unit
 ) {
     var showColorDialog by remember { mutableStateOf(false) }
-    Column(
+    val baseColors = listOf(
+        Color.Red, Color.Green, Color.Blue, Color.Yellow,
+        Color.Cyan, Color.Magenta, Color.Black, Color.White,
+        Color.Gray, Color.DarkGray, Color.LightGray,
+        Color(0xFFFF8C00), Color(0xFF9370DB), Color(0xFF20B2AA),
+        Color(0xFFDC143C), Color(0xFF228B22), Color(0xFF4B0082)
+    )
+    val colors = baseColors + customColors
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(vertical = 4.dp)
     ) {
-        Text(
-            text = "Palette",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        // Palette grid
-        val baseColors = listOf(
-            Color.Red, Color.Green, Color.Blue, Color.Yellow,
-            Color.Cyan, Color.Magenta, Color.Black, Color.White,
-            Color.Gray, Color.DarkGray, Color.LightGray,
-            Color(0xFFFF8C00), Color(0xFF9370DB), Color(0xFF20B2AA),
-            Color(0xFFDC143C), Color(0xFF228B22), Color(0xFF4B0082)
-        )
-        val colors = baseColors + customColors.map { Color(it) }
-        val rows = colors.chunked(6)
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.CenterStart),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp)
         ) {
-            rows.forEach { rowColors ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    rowColors.forEach { color ->
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .background(color, CircleShape)
-                                .border(
-                                    width = if (selectedColor == color) 4.dp else 2.dp,
-                                    color = if (selectedColor == color) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.outline,
-                                    shape = CircleShape
-                                )
-                                .clickable { onColorSelected(color) }
+            items(colors) { color ->
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(color, CircleShape)
+                        .border(
+                            width = if (selectedColor == color) 3.dp else 1.dp,
+                            color = if (selectedColor == color) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.outline,
+                            shape = CircleShape
                         )
-                    }
+                        .clickable { onColorSelected(color) }
+                )
+            }
+            item {
+                IconButton(
+                    onClick = { showColorDialog = true },
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(Color(0xFFFFB6C1), CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Color", tint = Color.White)
                 }
             }
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(
-            onClick = { showColorDialog = true },
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFFB6C1),
-                contentColor = Color.White
-            )
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Color")
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Add Color")
         }
     }
     if (showColorDialog) {
         ModernColorSelectorDialog(
-            palette = customColors,
+            palette = customColors.map { it.value.toInt() },
             onAddColor = { color ->
                 onAddCustomColor(color)
                 showColorDialog = false
