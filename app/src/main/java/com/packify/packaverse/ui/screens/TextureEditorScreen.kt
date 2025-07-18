@@ -296,8 +296,8 @@ fun TextureEditorScreen(
                         }
                         selectedColor = Color(colorInt)
                     },
-                    onDeleteColor = { colorInt ->
-                        val newPalette = palette.filter { it != colorInt }
+                    onDeleteColor = { colorsToDelete ->
+                        val newPalette = palette.filter { it !in colorsToDelete }
                         viewModel.saveCustomPalette(newPalette)
                         selectedColor = Color.Red // Indicate deletion
                     }
@@ -1063,10 +1063,9 @@ fun PixelPalette(
     palette: List<Int>,
     onColorSelected: (Int) -> Unit,
     onAddColor: (Int) -> Unit,
-    onDeleteColor: (Int) -> Unit
+    onDeleteColor: (List<Int>) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    var selectedForDelete by remember { mutableStateOf<Int?>(null) }
     val baseColors = listOf(
         Color.Red.toArgb(), Color.Green.toArgb(), Color.Blue.toArgb(), Color.Yellow.toArgb(),
         Color.Cyan.toArgb(), Color.Magenta.toArgb(), Color.Black.toArgb(), Color.White.toArgb(),
@@ -1074,24 +1073,27 @@ fun PixelPalette(
         Color(0xFFFF8C00).toArgb(), Color(0xFF9370DB).toArgb(), Color(0xFF20B2AA).toArgb(),
         Color(0xFFDC143C).toArgb(), Color(0xFF228B22).toArgb(), Color(0xFF4B0082).toArgb()
     )
+    var selectedForDelete by remember { mutableStateOf<MutableSet<Int>>(mutableSetOf()) }
+    val inDeleteMode = selectedForDelete.isNotEmpty()
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
-        if (selectedForDelete != null) {
+        if (inDeleteMode) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
                 Button(
                     onClick = {
-                        selectedForDelete?.let { onDeleteColor(it) }
-                        selectedForDelete = null
+                        onDeleteColor(selectedForDelete.toList())
+                        selectedForDelete.clear()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = Color.White
                     ),
-                    shape = CircleShape
+                    shape = CircleShape,
+                    enabled = selectedForDelete.isNotEmpty()
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete Color")
                     Spacer(modifier = Modifier.width(4.dp))
@@ -1099,7 +1101,7 @@ fun PixelPalette(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = { selectedForDelete = null },
+                    onClick = { selectedForDelete.clear() },
                     colors = ButtonDefaults.buttonColors(),
                     shape = CircleShape
                 ) {
@@ -1122,6 +1124,7 @@ fun PixelPalette(
                 items(palette) { colorInt ->
                     val color = Color(colorInt)
                     val isBase = baseColors.contains(colorInt)
+                    val isSelected = selectedForDelete.contains(colorInt)
                     Box(
                         modifier = Modifier
                             .padding(6.dp)
@@ -1129,12 +1132,12 @@ fun PixelPalette(
                             .background(color, CircleShape)
                             .border(
                                 width = when {
-                                    selectedForDelete == colorInt -> 3.dp
+                                    isSelected -> 3.dp
                                     selectedColor == colorInt -> 3.dp
                                     else -> 1.dp
                                 },
                                 color = when {
-                                    selectedForDelete == colorInt -> MaterialTheme.colorScheme.error
+                                    isSelected -> MaterialTheme.colorScheme.error
                                     selectedColor == colorInt -> Color(0xFFFFB6C1)
                                     else -> MaterialTheme.colorScheme.outline
                                 },
@@ -1142,10 +1145,17 @@ fun PixelPalette(
                             )
                             .combinedClickable(
                                 onClick = {
-                                    if (selectedForDelete == null) onColorSelected(colorInt)
+                                    if (inDeleteMode && !isBase) {
+                                        if (isSelected) selectedForDelete.remove(colorInt)
+                                        else selectedForDelete.add(colorInt)
+                                    } else if (!inDeleteMode) {
+                                        onColorSelected(colorInt)
+                                    }
                                 },
                                 onLongClick = {
-                                    if (!isBase) selectedForDelete = colorInt
+                                    if (!isBase) {
+                                        if (!inDeleteMode) selectedForDelete.add(colorInt)
+                                    }
                                 }
                             )
                     )
