@@ -1275,7 +1275,7 @@ fun PixelPalette(
         Color(0xFFFF8C00).toArgb(), Color(0xFF9370DB).toArgb(), Color(0xFF20B2AA).toArgb(),
         Color(0xFFDC143C).toArgb(), Color(0xFF228B22).toArgb(), Color(0xFF4B0082).toArgb()
     )
-    var selectedForDelete by remember { mutableStateOf<MutableSet<Int>>(mutableSetOf()) }
+    var selectedForDelete by remember { mutableStateOf<Set<Int>>(emptySet()) }
     val inDeleteMode = selectedForDelete.isNotEmpty()
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -1288,7 +1288,7 @@ fun PixelPalette(
                 Button(
                     onClick = {
                         onDeleteColor(selectedForDelete.toList())
-                        selectedForDelete.clear()
+                        selectedForDelete = emptySet()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
@@ -1303,7 +1303,7 @@ fun PixelPalette(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
-                    onClick = { selectedForDelete.clear() },
+                    onClick = { selectedForDelete = emptySet() },
                     colors = ButtonDefaults.buttonColors(),
                     shape = CircleShape
                 ) {
@@ -1348,15 +1348,16 @@ fun PixelPalette(
                             .combinedClickable(
                                 onClick = {
                                     if (inDeleteMode && !isBase) {
-                                        if (isSelected) selectedForDelete.remove(colorInt)
-                                        else selectedForDelete.add(colorInt)
+                                        selectedForDelete = selectedForDelete.toMutableSet().apply {
+                                            if (isSelected) remove(colorInt) else add(colorInt)
+                                        }
                                     } else if (!inDeleteMode) {
                                         onColorSelected(colorInt)
                                     }
                                 },
                                 onLongClick = {
                                     if (!isBase) {
-                                        if (!inDeleteMode) selectedForDelete.add(colorInt)
+                                        selectedForDelete = selectedForDelete.toMutableSet().apply { add(colorInt) }
                                     }
                                 }
                             )
