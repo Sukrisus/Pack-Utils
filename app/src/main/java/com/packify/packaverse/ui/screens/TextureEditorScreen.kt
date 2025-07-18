@@ -750,7 +750,8 @@ fun AdvancedColorPalette(
                         val newColor = Color(
                             (Math.random() * 255).toInt(),
                             (Math.random() * 255).toInt(),
-                            (Math.random() * 255).toInt()
+                            (Math.random() * 255).toInt(),
+                            255 // alpha fully opaque
                         )
                         onAddCustomColor(newColor)
                     },
