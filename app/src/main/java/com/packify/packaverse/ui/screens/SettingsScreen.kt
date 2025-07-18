@@ -202,7 +202,7 @@ fun SettingsScreen(
                     )
                     SettingsItem(
                         title = "Developer",
-                        subtitle = "Packify",
+                        subtitle = "Yami_",
                         icon = Icons.Default.Person,
                         onClick = {}
                     )
@@ -219,11 +219,13 @@ fun SettingsScreen(
                 onClick = { showResetDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.filledTonalButtonColors()
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    contentColor = Color.White
+                )
             ) {
-                Icon(Icons.Default.Restore, contentDescription = null)
+                Icon(Icons.Default.Restore, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Reset to Defaults")
+                Text("Reset to Defaults", color = Color.White)
             }
             // Share App Button
             FilledTonalButton(
@@ -242,11 +244,13 @@ fun SettingsScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.filledTonalButtonColors()
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    contentColor = Color.White
+                )
             ) {
-                Icon(Icons.Default.Share, contentDescription = null)
+                Icon(Icons.Default.Share, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Share App")
+                Text("Share App", color = Color.White)
             }
         }
         
