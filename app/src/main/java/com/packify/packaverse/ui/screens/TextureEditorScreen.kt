@@ -53,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import com.packify.packaverse.R
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.combinedClickable
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -283,7 +284,7 @@ fun TextureEditorScreen(
                 // Add color palette below the canvas
                 PixelPalette(
                     selectedColor = selectedColor.toArgb(),
-                    palette = palette,
+                    palette = palette.map { it.toInt() },
                     onColorSelected = { colorInt ->
                         selectedColor = Color(colorInt)
                     },
@@ -1064,6 +1065,13 @@ fun PixelPalette(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var selectedForDelete by remember { mutableStateOf<Int?>(null) }
+    val baseColors = listOf(
+        Color.Red.toArgb(), Color.Green.toArgb(), Color.Blue.toArgb(), Color.Yellow.toArgb(),
+        Color.Cyan.toArgb(), Color.Magenta.toArgb(), Color.Black.toArgb(), Color.White.toArgb(),
+        Color.Gray.toArgb(), Color.DarkGray.toArgb(), Color.LightGray.toArgb(),
+        Color(0xFFFF8C00).toArgb(), Color(0xFF9370DB).toArgb(), Color(0xFF20B2AA).toArgb(),
+        Color(0xFFDC143C).toArgb(), Color(0xFF228B22).toArgb(), Color(0xFF4B0082).toArgb()
+    )
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -1111,8 +1119,10 @@ fun PixelPalette(
             ) {
                 items(palette) { colorInt ->
                     val color = Color(colorInt)
+                    val isBase = baseColors.contains(colorInt)
                     Box(
                         modifier = Modifier
+                            .padding(6.dp)
                             .size(26.dp)
                             .background(color, CircleShape)
                             .border(
@@ -1128,14 +1138,14 @@ fun PixelPalette(
                                 },
                                 shape = CircleShape
                             )
-                            .pointerInput(colorInt) {
-                                detectTapGestures(
-                                    onLongPress = { selectedForDelete = colorInt },
-                                    onTap = {
-                                        if (selectedForDelete == null) onColorSelected(colorInt)
-                                    }
-                                )
-                            }
+                            .combinedClickable(
+                                onClick = {
+                                    if (selectedForDelete == null) onColorSelected(colorInt)
+                                },
+                                onLongClick = {
+                                    if (!isBase) selectedForDelete = colorInt
+                                }
+                            )
                     )
                 }
                 item {
