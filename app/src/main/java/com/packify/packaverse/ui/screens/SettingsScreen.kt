@@ -508,7 +508,10 @@ fun SettingsItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsSubPageM3(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             CenterAlignedTopAppBar(
                 title = { Text(title, style = MaterialTheme.typography.titleLarge) },
