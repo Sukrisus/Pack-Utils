@@ -897,6 +897,7 @@ fun ColorWheelDialog(
     onAddColor: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
+    // Use a single HSV state
     var hue by remember { mutableStateOf(0f) }
     var saturation by remember { mutableStateOf(1f) }
     var value by remember { mutableStateOf(1f) }
@@ -964,7 +965,7 @@ fun ColorWheelDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onAddColor(color) }) {
+            TextButton(onClick = { onAddColor(Color.hsv(hue, saturation, value)) }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Color")
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Add")
