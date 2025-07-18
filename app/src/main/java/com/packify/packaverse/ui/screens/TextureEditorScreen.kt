@@ -423,7 +423,12 @@ fun AdvancedToolbar(
                             value = brushSize,
                             onValueChange = onBrushSizeChanged,
                             valueRange = 1f..50f,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = SliderDefaults.colors(
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                thumbColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
 
@@ -467,7 +472,12 @@ fun AdvancedToolbar(
                             value = opacity,
                             onValueChange = onOpacityChanged,
                             valueRange = 0.1f..1f,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = SliderDefaults.colors(
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                thumbColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
 
@@ -783,8 +793,9 @@ fun ModernColorSelectorDialog(
                     onValueChange = { hue = it },
                     valueRange = 0f..360f,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, 1f, 1f),
-                        activeTrackColor = Color.hsv(hue, 1f, 1f)
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 // Saturation slider
@@ -794,8 +805,9 @@ fun ModernColorSelectorDialog(
                     onValueChange = { saturation = it },
                     valueRange = 0f..1f,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, saturation, 1f),
-                        activeTrackColor = Color.hsv(hue, saturation, 1f)
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 // Value/Brightness slider
@@ -805,8 +817,9 @@ fun ModernColorSelectorDialog(
                     onValueChange = { value = it },
                     valueRange = 0f..1f,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, 1f, value),
-                        activeTrackColor = Color.hsv(hue, 1f, value)
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -878,8 +891,9 @@ fun AdvancedColorPickerDialog(
                     value = red,
                     onValueChange = { red = it },
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.Red,
-                        activeTrackColor = Color.Red
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
 
@@ -888,8 +902,9 @@ fun AdvancedColorPickerDialog(
                     value = green,
                     onValueChange = { green = it },
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.Green,
-                        activeTrackColor = Color.Green
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
 
@@ -898,8 +913,9 @@ fun AdvancedColorPickerDialog(
                     value = blue,
                     onValueChange = { blue = it },
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.Blue,
-                        activeTrackColor = Color.Blue
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
 
@@ -908,8 +924,9 @@ fun AdvancedColorPickerDialog(
                     value = alpha,
                     onValueChange = { alpha = it },
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.Gray,
-                        activeTrackColor = Color.Gray
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
@@ -1119,8 +1136,9 @@ fun PixelPaletteColorDialog(
                     onValueChange = { hue = it },
                     valueRange = 0f..360f,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, 1f, 1f),
-                        activeTrackColor = Color.hsv(hue, 1f, 1f)
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 Text("Saturation: ${(saturation * 100).toInt()}%")
@@ -1129,8 +1147,9 @@ fun PixelPaletteColorDialog(
                     onValueChange = { saturation = it },
                     valueRange = 0f..1f,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, saturation, 1f),
-                        activeTrackColor = Color.hsv(hue, saturation, 1f)
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 Text("Brightness: ${(value * 100).toInt()}%")
@@ -1139,8 +1158,9 @@ fun PixelPaletteColorDialog(
                     onValueChange = { value = it },
                     valueRange = 0f..1f,
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.hsv(hue, 1f, value),
-                        activeTrackColor = Color.hsv(hue, 1f, value)
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        thumbColor = MaterialTheme.colorScheme.primary
                     )
                 )
                 if (isDuplicate) {
