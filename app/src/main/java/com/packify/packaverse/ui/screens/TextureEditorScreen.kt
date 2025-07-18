@@ -248,6 +248,77 @@ fun TextureEditorScreen(
         viewModel.saveCustomPalette(customColorsState.map { it.value.toInt() })
     }
 
+    // --- Layer system state ---
+    val initialBitmap = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
+    val layers = remember { mutableStateListOf(
+        Layer(id = 0, name = "Layer 1", bitmap = initialBitmap.copy(initialBitmap.config, true))
+    ) }
+    var selectedLayerId by remember { mutableStateOf(0) }
+    var showLayerPanel by remember { mutableStateOf(true) }
+    var layerIdCounter by remember { mutableStateOf(1) }
+
+    // --- Layer actions ---
+    fun addLayer() {
+        layers.add(
+            Layer(
+                id = layerIdCounter,
+                name = "Layer ${layerIdCounter + 1}",
+                bitmap = Bitmap.createBitmap(initialBitmap.width, initialBitmap.height, Bitmap.Config.ARGB_8888)
+            )
+        )
+        selectedLayerId = layerIdCounter
+        layerIdCounter++
+    }
+    fun removeLayer(id: Int) {
+        if (layers.size > 1) {
+            val idx = layers.indexOfFirst { it.id == id }
+            layers.removeAt(idx)
+            selectedLayerId = layers.lastOrNull()?.id ?: 0
+        }
+    }
+    fun moveLayer(from: Int, to: Int) {
+        if (from in layers.indices && to in layers.indices) {
+            val l = layers.removeAt(from)
+            layers.add(to, l)
+        }
+    }
+    fun toggleVisibility(id: Int) {
+        layers.find { it.id == id }?.let { it.visible = !it.visible }
+    }
+    fun changeOpacity(id: Int, value: Float) {
+        layers.find { it.id == id }?.let { it.opacity = value }
+    }
+    fun mergeLayer(id: Int) {
+        val idx = layers.indexOfFirst { it.id == id }
+        if (idx > 0) {
+            val lower = layers[idx - 1]
+            val upper = layers[idx]
+            val canvas = Canvas(lower.bitmap)
+            val paint = Paint().apply { alpha = (upper.opacity * 255).toInt() }
+            canvas.drawBitmap(upper.bitmap, 0f, 0f, paint)
+            layers.removeAt(idx)
+            selectedLayerId = lower.id
+        }
+    }
+    fun renameLayer(id: Int, newName: String) {
+        layers.find { it.id == id }?.name = newName
+    }
+    fun duplicateLayer(id: Int) {
+        val orig = layers.find { it.id == id } ?: return
+        val newId = layerIdCounter
+        layers.add(
+            Layer(
+                id = newId,
+                name = orig.name + " Copy",
+                bitmap = orig.bitmap.copy(orig.bitmap.config, true),
+                visible = orig.visible,
+                opacity = orig.opacity
+            )
+        )
+        selectedLayerId = newId
+        layerIdCounter++
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
