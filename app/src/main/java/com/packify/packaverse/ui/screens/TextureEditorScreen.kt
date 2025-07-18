@@ -415,63 +415,92 @@ fun TextureEditorScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .systemBarsPadding(),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .systemBarsPadding()
         ) {
-            if (canvasBitmap == null) {
-                Text(
-                    text = "Failed to load texture image.",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyLarge
+            if (showLayerPanel) {
+                LayerPanel(
+                    layers = layers,
+                    selectedLayerId = selectedLayerId,
+                    onSelectLayer = { selectedLayerId = it },
+                    onAddLayer = { addLayer() },
+                    onRemoveLayer = { removeLayer(it) },
+                    onMoveLayer = { from, to -> moveLayer(from, to) },
+                    onToggleVisibility = { toggleVisibility(it) },
+                    onChangeOpacity = { id, v -> changeOpacity(id, v) }
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
+            }
+            Box(Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    EnhancedTextureCanvas(
-                        texture = texture,
-                        currentTool = currentTool,
-                        brushSize = brushSize, // Use the state variable
-                        brushShape = BrushShape.ROUND, // Default shape
-                        selectedColor = selectedColor,
-                        opacity = 1f,
-                        onDrawingChanged = {
-                            hasUnsavedChanges = true
-                        },
-                        onBitmapUpdated = { bitmap ->
-                            canvasBitmap = bitmap
-                        },
-                        externalBitmap = canvasBitmap,
-                        pushUndo = { bmp -> pushUndo(bmp) },
-                        clearRedo = { clearRedo() }
+                    if (canvasBitmap == null) {
+                        Text(
+                            text = "Failed to load texture image.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                        ) {
+                            EnhancedTextureCanvas(
+                                texture = texture,
+                                currentTool = currentTool,
+                                brushSize = brushSize, // Use the state variable
+                                brushShape = BrushShape.ROUND, // Default shape
+                                selectedColor = selectedColor,
+                                opacity = 1f,
+                                onDrawingChanged = {
+                                    hasUnsavedChanges = true
+                                },
+                                onBitmapUpdated = { bitmap ->
+                                    // Update the selected layer's bitmap
+                                    layers.find { it.id == selectedLayerId }?.bitmap = bitmap
+                                },
+                                externalBitmap = layers.find { it.id == selectedLayerId }?.bitmap,
+                                pushUndo = { bmp -> pushUndo(bmp) },
+                                clearRedo = { clearRedo() }
+                            )
+                        }
+                        // Add color palette below the canvas
+                        PixelPalette(
+                            selectedColor = selectedColor.toArgb(),
+                            palette = palette.map { it.toInt() },
+                            onColorSelected = { colorInt ->
+                                selectedColor = Color(colorInt)
+                            },
+                            onAddColor = { colorInt ->
+                                if (!palette.contains(colorInt)) {
+                                    val newPalette = palette + colorInt
+                                    viewModel.saveCustomPalette(newPalette)
+                                }
+                                selectedColor = Color(colorInt)
+                            },
+                            onDeleteColor = { colorsToDelete ->
+                                val newPalette = palette.filter { it !in colorsToDelete }
+                                viewModel.saveCustomPalette(newPalette)
+                                selectedColor = Color.Red // Indicate deletion
+                            }
+                        )
+                    }
+                }
+                // Toggle LayerPanel button
+                IconButton(
+                    onClick = { showLayerPanel = !showLayerPanel },
+                    modifier = Modifier.align(Alignment.TopStart)
+                ) {
+                    Icon(
+                        imageVector = if (showLayerPanel) Icons.Default.ChevronLeft else Icons.Default.ChevronRight,
+                        contentDescription = if (showLayerPanel) "Hide Layers" else "Show Layers"
                     )
                 }
-                // Add color palette below the canvas
-                PixelPalette(
-                    selectedColor = selectedColor.toArgb(),
-                    palette = palette.map { it.toInt() },
-                    onColorSelected = { colorInt ->
-                        selectedColor = Color(colorInt)
-                    },
-                    onAddColor = { colorInt ->
-                        if (!palette.contains(colorInt)) {
-                            val newPalette = palette + colorInt
-                            viewModel.saveCustomPalette(newPalette)
-                        }
-                        selectedColor = Color(colorInt)
-                    },
-                    onDeleteColor = { colorsToDelete ->
-                        val newPalette = palette.filter { it !in colorsToDelete }
-                        viewModel.saveCustomPalette(newPalette)
-                        selectedColor = Color.Red // Indicate deletion
-                    }
-                )
             }
         }
         // Color picker dialog
