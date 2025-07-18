@@ -897,17 +897,55 @@ fun ColorWheelDialog(
     onAddColor: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var color by remember { mutableStateOf(Color.Red) }
+    var hue by remember { mutableStateOf(0f) }
+    var saturation by remember { mutableStateOf(1f) }
+    var value by remember { mutableStateOf(1f) }
+    val color = Color.hsv(hue, saturation, value)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Pick a Color") },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // Simple color wheel using HSV
-                HSVColorWheel(
-                    modifier = Modifier.size(200.dp),
-                    color = color,
-                    onColorChanged = { color = it }
+                // Large color preview
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(color, CircleShape)
+                        .border(2.dp, Color.Black, CircleShape)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                // Hue slider
+                Text("Hue: ${hue.toInt()}")
+                Slider(
+                    value = hue,
+                    onValueChange = { hue = it },
+                    valueRange = 0f..360f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, 1f, 1f),
+                        activeTrackColor = Color.hsv(hue, 1f, 1f)
+                    )
+                )
+                // Saturation slider
+                Text("Saturation: ${(saturation * 100).toInt()}%")
+                Slider(
+                    value = saturation,
+                    onValueChange = { saturation = it },
+                    valueRange = 0f..1f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, saturation, 1f),
+                        activeTrackColor = Color.hsv(hue, saturation, 1f)
+                    )
+                )
+                // Value/Brightness slider
+                Text("Brightness: ${(value * 100).toInt()}%")
+                Slider(
+                    value = value,
+                    onValueChange = { value = it },
+                    valueRange = 0f..1f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, 1f, value),
+                        activeTrackColor = Color.hsv(hue, 1f, value)
+                    )
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Palette:")
