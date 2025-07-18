@@ -55,6 +55,103 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color as ComposeColor
+import android.graphics.Bitmap as AndroidBitmap
+
+// --- Layer data class ---
+data class Layer(
+    val id: Int,
+    var name: String,
+    var bitmap: AndroidBitmap,
+    var visible: Boolean = true,
+    var opacity: Float = 1f
+)
+
+// --- LayerPanel composable ---
+@Composable
+fun LayerPanel(
+    layers: List<Layer>,
+    selectedLayerId: Int,
+    onSelectLayer: (Int) -> Unit,
+    onAddLayer: () -> Unit,
+    onRemoveLayer: (Int) -> Unit,
+    onMoveLayer: (Int, Int) -> Unit,
+    onToggleVisibility: (Int) -> Unit,
+    onChangeOpacity: (Int, Float) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .width(180.dp)
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(8.dp)
+    ) {
+        Text("Layers", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        LazyColumn {
+            itemsIndexed(layers.reversed()) { index, layer ->
+                val realIndex = layers.size - 1 - index
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clickable { onSelectLayer(layer.id) },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (layer.id == selectedLayerId) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = layer.visible,
+                            onCheckedChange = { onToggleVisibility(layer.id) }
+                        )
+                        Text(layer.name, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { onRemoveLayer(layer.id) }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Layer")
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Opacity", fontSize = 12.sp)
+                        Slider(
+                            value = layer.opacity,
+                            onValueChange = { onChangeOpacity(layer.id, it) },
+                            valueRange = 0.1f..1f,
+                            modifier = Modifier.weight(1f),
+                            colors = SliderDefaults.colors(
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                thumbColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                        IconButton(onClick = {
+                            if (realIndex > 0) onMoveLayer(realIndex, realIndex - 1)
+                        }) {
+                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Move Up")
+                        }
+                        IconButton(onClick = {
+                            if (realIndex < layers.size - 1) onMoveLayer(realIndex, realIndex + 1)
+                        }) {
+                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Move Down")
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onAddLayer, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.Add, contentDescription = "Add Layer")
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("Add Layer")
+        }
+    }
+}
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
