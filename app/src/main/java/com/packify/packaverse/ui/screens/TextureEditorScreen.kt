@@ -54,6 +54,7 @@ import com.packify.packaverse.R
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -1055,6 +1056,7 @@ fun HSVColorWheel(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PixelPalette(
     selectedColor: Int,
