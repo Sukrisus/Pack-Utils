@@ -280,16 +280,18 @@ fun TextureEditorScreen(
                     )
                 }
                 // Add color palette below the canvas
-                ModernPalette(
-                    selectedColor = selectedColor,
-                    customColors = customColorsState,
-                    onColorSelected = { color -> selectedColor = color },
-                    onAddCustomColor = { color ->
-                        if (!customColorsState.contains(color)) {
-                            customColorsState.add(color)
-                            savePalette()
+                PixelPalette(
+                    selectedColor = selectedColor.toArgb(),
+                    palette = palette,
+                    onColorSelected = { colorInt ->
+                        selectedColor = Color(colorInt)
+                    },
+                    onAddColor = { colorInt ->
+                        if (!palette.contains(colorInt)) {
+                            val newPalette = palette + colorInt
+                            viewModel.saveCustomPalette(newPalette)
                         }
-                        selectedColor = color
+                        selectedColor = Color(colorInt)
                     }
                 )
             }
