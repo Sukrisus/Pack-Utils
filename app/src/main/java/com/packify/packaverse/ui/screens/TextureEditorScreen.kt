@@ -806,7 +806,12 @@ fun AdvancedColorPickerDialog(
     var blue by remember { mutableStateOf(selectedColor.blue) }
     var alpha by remember { mutableStateOf(selectedColor.alpha) }
 
-    val currentColor = Color(red, green, blue, alpha)
+    val currentColor = Color(
+        (red * 255).toInt(),
+        (green * 255).toInt(),
+        (blue * 255).toInt(),
+        (alpha * 255).toInt()
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
