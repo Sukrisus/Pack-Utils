@@ -19,6 +19,7 @@ import com.packify.packaverse.ui.theme.rememberThemeManager
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 
 sealed class SettingsPage {
     object Main : SettingsPage()
@@ -440,6 +441,7 @@ fun SettingsItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -449,9 +451,7 @@ fun SettingsItem(
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             modifier = Modifier.size(20.dp)
         )
-        
         Spacer(modifier = Modifier.width(12.dp))
-        
         Column(
             modifier = Modifier.weight(1f)
         ) {
@@ -467,7 +467,6 @@ fun SettingsItem(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
         }
-        
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
