@@ -706,13 +706,14 @@ fun ModernPalette(
         )
         Spacer(modifier = Modifier.height(12.dp))
         // Palette grid
-        val colors = listOf(
+        val baseColors = listOf(
             Color.Red, Color.Green, Color.Blue, Color.Yellow,
             Color.Cyan, Color.Magenta, Color.Black, Color.White,
             Color.Gray, Color.DarkGray, Color.LightGray,
             Color(0xFFFF8C00), Color(0xFF9370DB), Color(0xFF20B2AA),
             Color(0xFFDC143C), Color(0xFF228B22), Color(0xFF4B0082)
-        ) + customColors
+        )
+        val colors = baseColors + customColors.map { Color(it) }
         val rows = colors.chunked(6)
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -767,7 +768,7 @@ fun ModernPalette(
 
 @Composable
 fun ModernColorSelectorDialog(
-    palette: List<Color>,
+    palette: List<Int>,
     onAddColor: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -830,7 +831,7 @@ fun ModernColorSelectorDialog(
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
-                                .background(c, CircleShape)
+                                .background(Color(c), CircleShape)
                                 .border(2.dp, Color.Black, CircleShape)
                         )
                     }
