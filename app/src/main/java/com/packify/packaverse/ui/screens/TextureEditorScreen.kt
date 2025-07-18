@@ -694,6 +694,8 @@ fun AdvancedColorPalette(
     onColorSelected: (Color) -> Unit,
     onAddCustomColor: (Color) -> Unit
 ) {
+    var showColorWheelDialog by remember { mutableStateOf(false) }
+
     val colors = listOf(
         Color.Red, Color.Green, Color.Blue, Color.Yellow,
         Color.Cyan, Color.Magenta, Color.Black, Color.White,
@@ -747,16 +749,9 @@ fun AdvancedColorPalette(
                     modifier = Modifier.weight(1f)
                 )
 
+                // New button to open color wheel dialog
                 Button(
-                    onClick = {
-                        val newColor = Color(
-                            (Math.random() * 255).toInt(),
-                            (Math.random() * 255).toInt(),
-                            (Math.random() * 255).toInt(),
-                            255 // alpha fully opaque
-                        )
-                        onAddCustomColor(newColor)
-                    },
+                    onClick = { showColorWheelDialog = true },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFFB6C1),
                         contentColor = Color.White
@@ -768,11 +763,21 @@ fun AdvancedColorPalette(
                         contentDescription = "Add Custom Color",
                         modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Random")
                 }
             }
         }
+    }
+
+    // Color wheel dialog
+    if (showColorWheelDialog) {
+        ColorWheelDialog(
+            palette = customColors,
+            onAddColor = { color ->
+                onAddCustomColor(color)
+                showColorWheelDialog = false
+            },
+            onDismiss = { showColorWheelDialog = false }
+        )
     }
 }
 
@@ -886,6 +891,134 @@ fun AdvancedColorPickerDialog(
             }
         }
     )
+}
+
+@Composable
+fun ColorWheelDialog(
+    palette: List<Color>,
+    onAddColor: (Color) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var color by remember { mutableStateOf(Color.Red) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Pick a Color") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Simple color wheel using HSV
+                HSVColorWheel(
+                    modifier = Modifier.size(200.dp),
+                    color = color,
+                    onColorChanged = { color = it }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Palette:")
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(palette) { c ->
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(c, CircleShape)
+                                .border(2.dp, Color.Black, CircleShape)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onAddColor(color) }) {
+                Icon(Icons.Default.Add, contentDescription = "Add Color")
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun HSVColorWheel(
+    modifier: Modifier = Modifier,
+    color: Color,
+    onColorChanged: (Color) -> Unit
+) {
+    // Simple HSV color wheel using Compose Canvas
+    // For brevity, use a vertical hue slider and a square SV box
+    var hue by remember { mutableStateOf(0f) }
+    var saturation by remember { mutableStateOf(1f) }
+    var value by remember { mutableStateOf(1f) }
+    val currentColor = Color.hsv(hue, saturation, value)
+    LaunchedEffect(color) {
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(color.toArgb(), hsv)
+        hue = hsv[0]
+        saturation = hsv[1]
+        value = hsv[2]
+    }
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        // Hue slider
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .height(150.dp)
+                    .width(24.dp)
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, _ ->
+                            val y = change.position.y.coerceIn(0f, 150f)
+                            hue = (y / 150f) * 360f
+                            onColorChanged(Color.hsv(hue, saturation, value))
+                        }
+                    }
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    for (i in 0..149) {
+                        drawRect(
+                            color = Color.hsv(i * 360f / 150f, 1f, 1f),
+                            topLeft = androidx.compose.ui.geometry.Offset(0f, i.toFloat()),
+                            size = androidx.compose.ui.geometry.Size(24f, 1f)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Hue")
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        // SV box
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .size(150.dp)
+                    .pointerInput(hue) {
+                        detectDragGestures { change, _ ->
+                            val x = change.position.x.coerceIn(0f, 150f)
+                            val y = change.position.y.coerceIn(0f, 150f)
+                            saturation = x / 150f
+                            value = 1f - (y / 150f)
+                            onColorChanged(Color.hsv(hue, saturation, value))
+                        }
+                    }
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    for (i in 0..149) {
+                        for (j in 0..149) {
+                            drawRect(
+                                color = Color.hsv(hue, i / 150f, 1f - (j / 150f)),
+                                topLeft = androidx.compose.ui.geometry.Offset(i.toFloat(), j.toFloat()),
+                                size = androidx.compose.ui.geometry.Size(1f, 1f)
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Saturation/Value")
+        }
+    }
 }
 
 // Helper extension to convert Compose Path to a list of Android Points
