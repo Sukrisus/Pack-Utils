@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import com.packify.packaverse.ui.theme.AppTypography
 
 private val DarkColorScheme = darkColorScheme(
     primary = Color(0xFFFFB6C1), // Light pink
@@ -77,7 +78,7 @@ fun PackifyTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = AppTypography(),
         content = content
     )
 }
