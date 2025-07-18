@@ -113,12 +113,10 @@ fun TextureEditorScreen(
         }
     }
 
-    fun pushUndoIfChanged(bitmap: android.graphics.Bitmap?) {
+    fun pushUndo(bitmap: android.graphics.Bitmap?) {
         bitmap?.let {
-            if (undoStack.isEmpty() || !it.sameAs(undoStack.last())) {
-                undoStack.add(it.copy(it.config, true))
-                if (undoStack.size > 20) undoStack.removeAt(0)
-            }
+            undoStack.add(it.copy(it.config, true))
+            if (undoStack.size > 20) undoStack.removeAt(0)
         }
     }
     fun clearRedo() {
@@ -277,7 +275,7 @@ fun TextureEditorScreen(
                             canvasBitmap = bitmap
                         },
                         externalBitmap = canvasBitmap,
-                        pushUndo = { bmp -> pushUndoIfChanged(bmp) },
+                        pushUndo = { bmp -> pushUndo(bmp) },
                         clearRedo = { clearRedo() }
                     )
                 }
