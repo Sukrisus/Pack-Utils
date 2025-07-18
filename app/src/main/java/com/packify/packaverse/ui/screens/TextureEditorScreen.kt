@@ -127,13 +127,15 @@ fun TextureEditorScreen(
     fun undo() {
         if (undoStack.isNotEmpty()) {
             redoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
-            canvasBitmap = undoStack.removeAt(undoStack.lastIndex)
+            val popped = undoStack.removeAt(undoStack.lastIndex)
+            canvasBitmap = popped.copy(popped.config, true)
         }
     }
     fun redo() {
         if (redoStack.isNotEmpty()) {
             undoStack.add(canvasBitmap!!.copy(canvasBitmap!!.config, true))
-            canvasBitmap = redoStack.removeAt(redoStack.lastIndex)
+            val popped = redoStack.removeAt(redoStack.lastIndex)
+            canvasBitmap = popped.copy(popped.config, true)
         }
     }
 
