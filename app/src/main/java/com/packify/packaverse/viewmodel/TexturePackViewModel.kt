@@ -70,6 +70,14 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
         _customPalette.value = colors
     }
     
+    private val SELECTED_PACK_ID_KEY = "selected_pack_id"
+    private val _selectedPackId = MutableStateFlow<String?>(sharedPreferences.getString(SELECTED_PACK_ID_KEY, null))
+    val selectedPackId: StateFlow<String?> = _selectedPackId.asStateFlow()
+    fun setSelectedPackId(packId: String) {
+        sharedPreferences.edit().putString(SELECTED_PACK_ID_KEY, packId).apply()
+        _selectedPackId.value = packId
+    }
+    
     init {
         loadTexturePacks()
     }

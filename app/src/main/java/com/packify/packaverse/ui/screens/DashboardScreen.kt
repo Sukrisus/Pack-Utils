@@ -77,7 +77,8 @@ fun DashboardScreen(
         }
     ) { paddingValues ->
         val texturePacks by viewModel.texturePacks.collectAsState()
-        var selectedPack by remember { mutableStateOf(texturePacks.firstOrNull()) }
+        val selectedPackId by viewModel.selectedPackId.collectAsState()
+        val selectedPack = texturePacks.find { it.id == selectedPackId } ?: texturePacks.firstOrNull()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -89,8 +90,9 @@ fun DashboardScreen(
         ) {
             PackSelectionCard(
                 texturePacks = texturePacks,
+                selectedPackId = selectedPackId ?: "",
                 onPackSelected = { packId ->
-                    selectedPack = texturePacks.find { it.id == packId }
+                    viewModel.setSelectedPackId(packId)
                 },
                 onExportPack = { /* export logic */ }
             )
@@ -263,6 +265,7 @@ fun TextureEditorContent(
         item {
             PackSelectionCard(
                 texturePacks = texturePacks,
+                selectedPackId = viewModel.selectedPackId.collectAsState().value ?: "",
                 onPackSelected = onPackSelected,
                 onExportPack = onExportPack
             )
@@ -274,7 +277,7 @@ fun TextureEditorContent(
                 category = category,
                 textures = textures.filter { it.category == category },
                 viewModel = viewModel,
-                packId = texturePacks.firstOrNull()?.id ?: "",
+                packId = viewModel.selectedPackId.collectAsState().value ?: "",
                 onTextureSelected = onTextureSelected,
                 onNavigateToTextureManagement = onNavigateToTextureManagement
             )
@@ -285,12 +288,12 @@ fun TextureEditorContent(
 @Composable
 fun PackSelectionCard(
     texturePacks: List<TexturePack>,
+    selectedPackId: String?,
     onPackSelected: (String) -> Unit,
     onExportPack: (String) -> Unit
 ) {
-    var selectedPack by remember { mutableStateOf(texturePacks.firstOrNull()) }
     var showPackDialog by remember { mutableStateOf(false) }
-    var tempSelectedPack by remember { mutableStateOf(selectedPack) }
+    var tempSelectedPack by remember { mutableStateOf(texturePacks.find { it.id == selectedPackId }) }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -307,7 +310,7 @@ fun PackSelectionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Current Pack: ${selectedPack?.name ?: "None"}",
+                    text = "Current Pack: ${tempSelectedPack?.name ?: "None"}",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -317,7 +320,7 @@ fun PackSelectionCard(
                         Icon(Icons.Default.SwapHoriz, contentDescription = "Switch Pack")
                     }
                     
-                    selectedPack?.let { pack ->
+                    tempSelectedPack?.let { pack ->
                         IconButton(onClick = { onExportPack(pack.id) }) {
                             Icon(Icons.Default.FileDownload, contentDescription = "Export Pack")
                         }
@@ -325,7 +328,7 @@ fun PackSelectionCard(
                 }
             }
             
-            selectedPack?.let { pack ->
+            tempSelectedPack?.let { pack ->
                 Text(
                     text = pack.description,
                     fontSize = 14.sp,
@@ -378,7 +381,6 @@ fun PackSelectionCard(
                 TextButton(
                     onClick = {
                         tempSelectedPack?.let { pack ->
-                            selectedPack = pack
                             onPackSelected(pack.id)
                         }
                         showPackDialog = false
