@@ -296,28 +296,93 @@ fun SettingsScreen(
                     }
                     SettingsPage.StorageLocation -> {
                         SettingsSubPageM3(title = "Storage Location", onBack = { currentPage = SettingsPage.Main }) {
-                            Text("Here you can manage your storage location settings.", style = MaterialTheme.typography.bodyLarge)
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("Current Storage:", style = MaterialTheme.typography.titleMedium)
+                                    Text(if (viewModel?.hasStoragePermission() == true) "External Storage" else "Internal Storage", fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.height(8.dp))
+                                    Text("Projects will be deleted with the app if stored internally.", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
+                                    Spacer(Modifier.height(8.dp))
+                                    Button(onClick = { /* TODO: Request/Change storage permission */ }, enabled = viewModel?.hasStoragePermission() != true) {
+                                        Text("Grant Storage Permission")
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            Text("Tip: External storage is recommended for keeping your projects safe.", color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
                         }
                     }
                     SettingsPage.ProjectsDirectory -> {
                         SettingsSubPageM3(title = "Projects Directory", onBack = { currentPage = SettingsPage.Main }) {
-                            Text("Your projects directory is:", style = MaterialTheme.typography.bodyLarge)
-                            Text(viewModel?.getProjectsDirectoryPath() ?: "Unknown", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("Directory Path:", style = MaterialTheme.typography.titleMedium)
+                                    val path = viewModel?.getProjectsDirectoryPath() ?: "Unknown"
+                                    Text(path, fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.height(8.dp))
+                                    Row {
+                                        Button(onClick = { /* TODO: Copy path to clipboard */ }) { Text("Copy Path") }
+                                        Spacer(Modifier.width(8.dp))
+                                        Button(onClick = { /* TODO: Open in file manager */ }) { Text("Open Folder") }
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            Text("Tip: You can back up or share your projects by accessing this folder.", color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
                         }
                     }
                     SettingsPage.Version -> {
                         SettingsSubPageM3(title = "Version", onBack = { currentPage = SettingsPage.Main }) {
-                            Text("App Version: 1.0.0", style = MaterialTheme.typography.bodyLarge)
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("App Version:", style = MaterialTheme.typography.titleMedium)
+                                    Text("1.0.0", fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.height(8.dp))
+                                    Text("Build: 100", fontSize = 13.sp)
+                                    Spacer(Modifier.height(8.dp))
+                                    Button(onClick = { /* TODO: Check for updates */ }) { Text("Check for Updates") }
+                                    Spacer(Modifier.height(8.dp))
+                                    Button(onClick = { /* TODO: Show changelog */ }) { Text("View Changelog") }
+                                }
+                            }
                         }
                     }
                     SettingsPage.Developer -> {
                         SettingsSubPageM3(title = "Developer", onBack = { currentPage = SettingsPage.Main }) {
-                            Text("Developed by Yami_", style = MaterialTheme.typography.bodyLarge)
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.padding(16.dp)) {
+                                    Text("Developed by:", style = MaterialTheme.typography.titleMedium)
+                                    Text("Yami_", fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.height(8.dp))
+                                    Text("Contact:", style = MaterialTheme.typography.titleSmall)
+                                    Text("Email: yami@example.com", fontSize = 13.sp)
+                                    Text("GitHub: github.com/YamiDev", fontSize = 13.sp)
+                                    Spacer(Modifier.height(8.dp))
+                                    Button(onClick = { /* TODO: Open website */ }) { Text("Visit Website") }
+                                }
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            Text("Special thanks to all contributors and open source libraries!", color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
                         }
                     }
                     SettingsPage.License -> {
                         SettingsSubPageM3(title = "License", onBack = { currentPage = SettingsPage.Main }) {
-                            Text("MIT License\n\nCopyright (c) 2024 Yami_\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: ...", style = MaterialTheme.typography.bodyLarge)
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 200.dp, max = 600.dp)
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(16.dp)
+                                ) {
+                                    Text(
+                                        """MIT License\n\nCopyright (c) 2024 Yami_\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.""",
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            Button(onClick = { /* TODO: Copy license to clipboard */ }) { Text("Copy License") }
                         }
                     }
                 }
