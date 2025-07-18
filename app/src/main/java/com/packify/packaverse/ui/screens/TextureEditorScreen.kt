@@ -627,6 +627,38 @@ fun EnhancedTextureCanvas(
                 modifier = Modifier
                     .size(with(density) { canvasSizePx.toDp() })
                     .pointerInput(currentTool, brushSize, selectedColor, bitmap) {
+                        detectTapGestures(
+                            onTap = { offset ->
+                                // Push undo and clear redo for tap
+                                pushUndo(bitmap)
+                                clearRedo()
+                                val bmpX = (offset.x / canvasSizePx) * bitmap.width
+                                val bmpY = (offset.y / canvasSizePx) * bitmap.height
+                                if (currentTool == EditorTool.BRUSH || currentTool == EditorTool.PENCIL) {
+                                    val canvas = Canvas(bitmap)
+                                    val paint = Paint().apply {
+                                        isAntiAlias = false
+                                        color = selectedColor.copy(alpha = opacity).toArgb()
+                                        style = Paint.Style.FILL
+                                    }
+                                    canvas.drawCircle(bmpX, bmpY, brushSize / 2, paint)
+                                    onBitmapUpdated(bitmap.copy(bitmap.config, true))
+                                    onDrawingChanged()
+                                } else if (currentTool == EditorTool.ERASER) {
+                                    val canvas = Canvas(bitmap)
+                                    val paint = Paint().apply {
+                                        isAntiAlias = false
+                                        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+                                        style = Paint.Style.FILL
+                                    }
+                                    canvas.drawCircle(bmpX, bmpY, brushSize / 2, paint)
+                                    onBitmapUpdated(bitmap.copy(bitmap.config, true))
+                                    onDrawingChanged()
+                                }
+                            }
+                        )
+                    }
+                    .pointerInput(currentTool, brushSize, selectedColor, bitmap) {
                         detectDragGestures(
                             onDragStart = { offset ->
                                 // Push undo and clear redo at the start of every stroke
