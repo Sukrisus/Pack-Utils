@@ -1029,6 +1029,139 @@ fun HSVColorWheel(
     }
 }
 
+@Composable
+fun PixelPalette(
+    selectedColor: Int,
+    palette: List<Int>,
+    onColorSelected: (Int) -> Unit,
+    onAddColor: (Int) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp)
+        ) {
+            items(palette) { colorInt ->
+                val color = Color(colorInt)
+                Box(
+                    modifier = Modifier
+                        .size(26.dp)
+                        .background(color, CircleShape)
+                        .border(
+                            width = if (selectedColor == colorInt) 3.dp else 1.dp,
+                            color = if (selectedColor == colorInt) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.outline,
+                            shape = CircleShape
+                        )
+                        .clickable { onColorSelected(colorInt) }
+                )
+            }
+            item {
+                IconButton(
+                    onClick = { showDialog = true },
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(Color(0xFFFFB6C1), CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Color", tint = Color.White)
+                }
+            }
+        }
+    }
+    if (showDialog) {
+        PixelPaletteColorDialog(
+            existingColors = palette,
+            onAdd = { colorInt ->
+                onAddColor(colorInt)
+                showDialog = false
+            },
+            onDismiss = { showDialog = false }
+        )
+    }
+}
+
+@Composable
+fun PixelPaletteColorDialog(
+    existingColors: List<Int>,
+    onAdd: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var hue by remember { mutableStateOf(0f) }
+    var saturation by remember { mutableStateOf(1f) }
+    var value by remember { mutableStateOf(1f) }
+    val color = Color.hsv(hue, saturation, value)
+    val colorInt = color.copy(alpha = 1f).toArgb()
+    val isDuplicate = existingColors.contains(colorInt)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Color") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(color, CircleShape)
+                        .border(2.dp, Color.Black, CircleShape)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Hue: ${hue.toInt()}")
+                Slider(
+                    value = hue,
+                    onValueChange = { hue = it },
+                    valueRange = 0f..360f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, 1f, 1f),
+                        activeTrackColor = Color.hsv(hue, 1f, 1f)
+                    )
+                )
+                Text("Saturation: ${(saturation * 100).toInt()}%")
+                Slider(
+                    value = saturation,
+                    onValueChange = { saturation = it },
+                    valueRange = 0f..1f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, saturation, 1f),
+                        activeTrackColor = Color.hsv(hue, saturation, 1f)
+                    )
+                )
+                Text("Brightness: ${(value * 100).toInt()}%")
+                Slider(
+                    value = value,
+                    onValueChange = { value = it },
+                    valueRange = 0f..1f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.hsv(hue, 1f, value),
+                        activeTrackColor = Color.hsv(hue, 1f, value)
+                    )
+                )
+                if (isDuplicate) {
+                    Text("Color already in palette", color = Color.Red, fontSize = 13.sp)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (!isDuplicate) onAdd(colorInt) },
+                enabled = !isDuplicate
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Color")
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
 // Helper extension to convert Compose Path to a list of Android Points
 private fun androidx.compose.ui.graphics.Path.asAndroidPathPoints(): List<Offset> {
     val points = mutableListOf<Offset>()
