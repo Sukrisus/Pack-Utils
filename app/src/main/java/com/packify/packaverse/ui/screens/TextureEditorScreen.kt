@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.AutoFixOff
 import androidx.compose.ui.res.painterResource
 import com.packify.packaverse.R
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.gestures.detectTapGestures
 
 enum class EditorTool {
     BRUSH, ERASER, COLOR_PICKER, FILL, SPRAY_PAINT, PENCIL
@@ -292,6 +293,11 @@ fun TextureEditorScreen(
                             viewModel.saveCustomPalette(newPalette)
                         }
                         selectedColor = Color(colorInt)
+                    },
+                    onDeleteColor = { colorInt ->
+                        val newPalette = palette.filter { it != colorInt }
+                        viewModel.saveCustomPalette(newPalette)
+                        selectedColor = Color.Red // Indicate deletion
                     }
                 )
             }
@@ -1053,43 +1059,95 @@ fun PixelPalette(
     selectedColor: Int,
     palette: List<Int>,
     onColorSelected: (Int) -> Unit,
-    onAddColor: (Int) -> Unit
+    onAddColor: (Int) -> Unit,
+    onDeleteColor: (Int) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
+    var selectedForDelete by remember { mutableStateOf<Int?>(null) }
+    Column(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp)
-        ) {
-            items(palette) { colorInt ->
-                val color = Color(colorInt)
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .background(color, CircleShape)
-                        .border(
-                            width = if (selectedColor == colorInt) 3.dp else 1.dp,
-                            color = if (selectedColor == colorInt) Color(0xFFFFB6C1) else MaterialTheme.colorScheme.outline,
-                            shape = CircleShape
-                        )
-                        .clickable { onColorSelected(colorInt) }
-                )
-            }
-            item {
-                IconButton(
-                    onClick = { showDialog = true },
-                    modifier = Modifier
-                        .size(28.dp)
-                        .background(Color(0xFFFFB6C1), CircleShape)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+        if (selectedForDelete != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(
+                    onClick = {
+                        selectedForDelete?.let { onDeleteColor(it) }
+                        selectedForDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = Color.White
+                    ),
+                    shape = CircleShape
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Color", tint = Color.White)
+                    Icon(Icons.Default.Delete, contentDescription = "Delete Color")
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Delete")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = { selectedForDelete = null },
+                    colors = ButtonDefaults.buttonColors(),
+                    shape = CircleShape
+                ) {
+                    Text("Cancel")
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+        ) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp)
+            ) {
+                items(palette) { colorInt ->
+                    val color = Color(colorInt)
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .background(color, CircleShape)
+                            .border(
+                                width = when {
+                                    selectedForDelete == colorInt -> 3.dp
+                                    selectedColor == colorInt -> 3.dp
+                                    else -> 1.dp
+                                },
+                                color = when {
+                                    selectedForDelete == colorInt -> MaterialTheme.colorScheme.error
+                                    selectedColor == colorInt -> Color(0xFFFFB6C1)
+                                    else -> MaterialTheme.colorScheme.outline
+                                },
+                                shape = CircleShape
+                            )
+                            .pointerInput(colorInt) {
+                                detectTapGestures(
+                                    onLongPress = { selectedForDelete = colorInt },
+                                    onTap = {
+                                        if (selectedForDelete == null) onColorSelected(colorInt)
+                                    }
+                                )
+                            }
+                    )
+                }
+                item {
+                    IconButton(
+                        onClick = { showDialog = true },
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(Color(0xFFFFB6C1), CircleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Color", tint = Color.White)
+                    }
                 }
             }
         }
