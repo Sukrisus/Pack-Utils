@@ -56,6 +56,28 @@ class TexturePackViewModel(application: Application) : AndroidViewModel(applicat
     private val _hasUnsavedChanges = mutableStateOf(false)
     val hasUnsavedChanges: State<Boolean> = _hasUnsavedChanges
     
+    private val CUSTOM_COLORS_KEY = "custom_palette_colors"
+    private val _customPalette = MutableStateFlow<List<Int>>(loadCustomPalette())
+    val customPalette: StateFlow<List<Int>> = _customPalette.asStateFlow()
+
+    private fun loadCustomPalette(): List<Int> {
+        val csv = sharedPreferences.getString(CUSTOM_COLORS_KEY, null) ?: return emptyList()
+        return csv.split(",").mapNotNull { it.toIntOrNull(16) }
+    }
+    fun saveCustomPalette(colors: List<Int>) {
+        val csv = colors.joinToString(",") { it.toString(16) }
+        sharedPreferences.edit().putString(CUSTOM_COLORS_KEY, csv).apply()
+        _customPalette.value = colors
+    }
+    
+    private val SELECTED_PACK_ID_KEY = "selected_pack_id"
+    private val _selectedPackId = MutableStateFlow<String?>(sharedPreferences.getString(SELECTED_PACK_ID_KEY, null))
+    val selectedPackId: StateFlow<String?> = _selectedPackId.asStateFlow()
+    fun setSelectedPackId(packId: String) {
+        sharedPreferences.edit().putString(SELECTED_PACK_ID_KEY, packId).apply()
+        _selectedPackId.value = packId
+    }
+    
     init {
         loadTexturePacks()
     }

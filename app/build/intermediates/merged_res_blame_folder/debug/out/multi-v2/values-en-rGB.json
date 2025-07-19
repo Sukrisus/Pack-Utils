@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.packify.packaverse.app-mergeDebugResources-56:/values-en-rGB/values-en-rGB.xml",
+            "outputFile": "com.packify.packaverse.app-mergeDebugResources-57:/values-en-rGB/values-en-rGB.xml",
             "map": [
                 {
                     "source": "/home/ubuntu/.gradle/caches/transforms-3/169161dd270e1a4b78fbec077c704095/transformed/foundation-release/res/values-en-rGB/values-en-rGB.xml",

@@ -183,10 +183,15 @@ fun PackifyApp() {
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToSettings = { navController.navigate("settings") },
                 onNavigateToCategory = { category ->
-                    // Navigate to the texture management screen for the selected pack and category
-                    val selectedPackId = viewModel.texturePacks.value.firstOrNull()?.id ?: ""
+                    // Use the current selectedPackId from the ViewModel
+                    val selectedPackId = viewModel.selectedPackId.value ?: viewModel.texturePacks.value.firstOrNull()?.id ?: ""
                     if (selectedPackId.isNotEmpty()) {
                         navController.navigate("texture_management/$selectedPackId/${category.name}")
+                    }
+                },
+                onNavigateToHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
                     }
                 }
             )

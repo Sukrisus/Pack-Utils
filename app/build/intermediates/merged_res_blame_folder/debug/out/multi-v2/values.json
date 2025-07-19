@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.packify.packaverse.app-mergeDebugResources-56:/values/values.xml",
+            "outputFile": "com.packify.packaverse.app-mergeDebugResources-57:/values/values.xml",
             "map": [
                 {
                     "source": "/home/ubuntu/.gradle/caches/transforms-3/9f32a872f0b1731ac06773ebeb3ffa7e/transformed/startup-runtime-1.1.1/res/values/values.xml",

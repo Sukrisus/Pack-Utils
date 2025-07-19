@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.packify.packaverse.app-mergeDebugResources-56:/values-ky/values-ky.xml",
+            "outputFile": "com.packify.packaverse.app-mergeDebugResources-57:/values-ky/values-ky.xml",
             "map": [
                 {
                     "source": "/home/ubuntu/.gradle/caches/transforms-3/e9637f6ff575b8d89d3f61c595bbac50/transformed/ui-release/res/values-ky/values-ky.xml",
