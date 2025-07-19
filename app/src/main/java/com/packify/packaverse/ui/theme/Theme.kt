@@ -78,7 +78,7 @@ fun PackifyTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = AppTypography(),
+        typography = AppTypography,
         content = content
     )
 }

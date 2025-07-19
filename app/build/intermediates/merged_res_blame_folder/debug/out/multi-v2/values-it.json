@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.packify.packaverse.app-mergeDebugResources-56:/values-it/values-it.xml",
+            "outputFile": "com.packify.packaverse.app-mergeDebugResources-57:/values-it/values-it.xml",
             "map": [
                 {
                     "source": "/home/ubuntu/.gradle/caches/transforms-3/409efa339740ddc1cc54a27f5c89ecb0/transformed/material3-release/res/values-it/values-it.xml",
